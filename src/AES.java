@@ -42,6 +42,7 @@ public class AES
 		{
 			make_a_state(sc);
 			subBytes();
+			shiftRows();
 		}
 	}
 	
@@ -64,7 +65,39 @@ public class AES
 	}
 	
 	static void shiftRows(){
+		//shift of 1
+		int[] row_1 = state[1];
+		int[] row_2 = state[2];
+		int[] row_3 = state[3];
 		
+		//setup the temp vars
+		int temp_1;
+		int temp_2;
+		int temp_3;
+		
+//		print_array(state);
+		
+		//first shift
+		temp_1 = row_1[0];
+		row_1[0] = row_1[1]; row_1[1] = row_1[2]; row_1[2] = row_1[3]; row_1[3] = temp_1;
+		
+		//second shift
+		temp_1 = row_2[0];
+		temp_2 = row_2[1];
+		row_2[0] = row_2[2]; row_2[1] = row_2[3]; row_2[2] = temp_1; row_2[3] = temp_2;
+		
+		//second shift
+		temp_1 = row_3[0];
+		temp_2 = row_3[1];
+		temp_3 = row_3[2];
+		row_3[0] = row_3[3]; row_3[1] = temp_1; row_3[2] = temp_2; row_3[3] = temp_3;
+		
+		//put back into state
+		state[1] = row_1;
+		state[2] = row_2;
+		state[3] = row_3;
+		
+//		print_array(state);
 	}
 	
 	static void mixColumns(){
