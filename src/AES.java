@@ -19,13 +19,15 @@ public class AES
 		
 		if (encrypt)
 		{
-			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
+			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
 			encrypt(sc, pw);
 			pw.close();
 		}
 		else
 		{
+			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
 			decrypt();
+			pw.close();
 		}
 		sc.close();
 	}
