@@ -1,39 +1,39 @@
-import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.PrintWriter;
+import java.util.Scanner;
 
 
 public class AES 
 {
-	static int [][] x_box;
-	static int [][] state;
+	protected static int [][] x_box;
+	protected static int [][] state;
 	public static void main(String[] args) throws IOException 
 	{
 		fill_xbox();
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-		
-		//read the entire file into this byte array
-		byte [] data = Files.readAllBytes(Paths.get(args[2]));
-		
-		//create a stream on the array
-		ByteArrayInputStream is = new ByteArrayInputStream(data);
-		
+		Scanner sc = new Scanner(new File (args[2]));
 		
 		if (encrypt)
 		{
-			encrypt();
+			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
+			encrypt(sc, pw);
+			pw.close();
 		}
 		else
 		{
 			decrypt();
 		}
+		sc.close();
 	}
 	
-	static void encrypt(){
-		
+	static void encrypt(Scanner sc, PrintWriter pw){
+		while (sc.hasNextLine())
+		{
+			make_a_state(sc);
+		}
 	}
 	
 	static void decrypt(){
@@ -41,9 +41,28 @@ public class AES
 	}
 	
 	
-	static void make_a_state()
+	static void make_a_state(Scanner sc)
 	{
-		
+		String test_state = sc.nextLine();
+		if (test_state.length() == 32) 
+		{
+			//Create state.
+			int subindex = 0;
+			for (int i = 0; i < 16; i++){
+				int nomnom = (Integer.decode("0x" +  test_state.substring(subindex, subindex+2))); 
+				System.out.print(nomnom +" ");
+				subindex+=2;
+			}
+			System.out.println();
+		}
+		else if (test_state.length() < 32)
+		{
+			//Paaaaaad 0s at back.
+		}
+		else
+		{
+			//Truncate sheet.
+		}
 	}
 	static void fill_xbox ()
 	{
