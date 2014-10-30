@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 
@@ -44,26 +45,48 @@ public class AES
 	static void make_a_state(Scanner sc)
 	{
 		String test_state = sc.nextLine();
-		if (test_state.length() == 32) 
+		if (test_state.length() > 32) 
 		{
-			//Create state.
-			int subindex = 0;
-			for (int i = 0; i < 16; i++){
-				int nomnom = (Integer.decode("0x" +  test_state.substring(subindex, subindex+2))); 
-				System.out.print(nomnom +" ");
-				subindex+=2;
-			}
-			System.out.println();
+			//Truncate sheet.
+			test_state = test_state.substring(0, 32);
 		}
 		else if (test_state.length() < 32)
 		{
 			//Paaaaaad 0s at back.
+			StringBuilder sb = new StringBuilder(test_state);
+			while(sb.length() < 32)
+				sb.append('0');
+			
+			test_state = sb.toString();		
 		}
-		else
-		{
-			//Truncate sheet.
+		
+		state = new int [4][4];
+		int subindex = 0;
+		ArrayList<Integer> al = new ArrayList<Integer>(); 
+		for (int i = 0; i < 16; i++){
+			al.add((Integer.decode("0x" +  test_state.substring(subindex, subindex+2))));
+			subindex+=2;
 		}
+		int count = 0;
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[i].length; j++){
+				state[j][i] = al.get(count++);
+			}
+		}
+		print_array(state);
+		
 	}
+	
+	static void print_array(int[][] a){
+		for(int[] i: a){
+			for(int j: i){
+				System.out.print(j + " ");
+			}
+			System.out.println();
+		}
+		System.out.println();
+	}
+	
 	static void fill_xbox ()
 	{
 		x_box = new int [][]
