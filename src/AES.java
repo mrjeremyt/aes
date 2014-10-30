@@ -86,7 +86,7 @@ public class AES
 		temp_2 = row_2[1];
 		row_2[0] = row_2[2]; row_2[1] = row_2[3]; row_2[2] = temp_1; row_2[3] = temp_2;
 		
-		//second shift
+		//third shift
 		temp_1 = row_3[0];
 		temp_2 = row_3[1];
 		temp_3 = row_3[2];
@@ -104,7 +104,8 @@ public class AES
 		
 	}
 	
-	static void addRoundKey(){
+	static void addRoundKey()
+	{
 		
 	}
 	
