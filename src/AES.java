@@ -11,15 +11,19 @@ public class AES
 	protected static int [][] x_box;
 	protected static int [][] state;
 	protected static int [][] key;
+	protected static int [][] expanded_key;
+	protected static int [][] rcon;
 	
 	public static void main(String[] args) throws IOException 
 	{
 		fill_xbox();
+		fill_rcon();
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
 		Scanner file = new Scanner(new File(args[2]));
 		make_key(args);
+		expand_key();
 		
 		if (encrypt)
 		{
@@ -106,6 +110,16 @@ public class AES
 	
 	static void addRoundKey()
 	{
+		
+	}
+	
+	private static void expand_key(){
+		expanded_key = new int[4][44];
+		
+		for(int i = 0; i <key.length; i++){
+			for(int j = 0; j < key[i].length; j++){
+				expanded_key[j][i] = key[j][i];		}		}
+
 		
 	}
 	
@@ -208,4 +222,16 @@ public class AES
 			   {0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16}
 			};
 	}
+	
+	static void fill_rcon ()
+	{
+		rcon = new int [][]
+		{
+			   {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			};
+	}
+	
 }
