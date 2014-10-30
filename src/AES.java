@@ -18,22 +18,22 @@ public class AES
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-		Scanner plaintext = new Scanner(new File(args[2]));
+		Scanner file = new Scanner(new File(args[2]));
 		make_key(args);
 		
 		if (encrypt)
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
-			encrypt(plaintext, pw);
+			encrypt(file, pw);
 			pw.close();
 		}
 		else
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
-			decrypt();
+			decrypt(file, pw);
 			pw.close();
 		}
-		plaintext.close();
+		file.close();
 	}
 	
 	
@@ -41,13 +41,39 @@ public class AES
 		while (sc.hasNextLine())
 		{
 			make_a_state(sc);
+			subBytes();
 		}
 	}
 	
-	static void decrypt(){
+	static void decrypt(Scanner sc, PrintWriter pw){
+		while(sc.hasNextLine()){
+			make_a_state(sc);
+		}
+	}
+	
+	static void subBytes(){
+		
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[0].length; j++){
+				int top = (state[j][i] >> 4);
+				int bottom = (state[j][i] & 0x0F);
+				System.out.println(x_box[top][bottom]);
+			}
+		}
 		
 	}
 	
+	static void shiftRows(){
+		
+	}
+	
+	static void mixColumns(){
+		
+	}
+	
+	static void addRoundKey(){
+		
+	}
 	
 	
 	private static void make_key(String[] args) throws FileNotFoundException {
