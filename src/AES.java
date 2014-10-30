@@ -52,15 +52,15 @@ public class AES
 	}
 	
 	static void subBytes(){
-		
+//		print_array(state);
 		for(int i = 0; i < state.length; i++){
 			for(int j = 0; j < state[0].length; j++){
 				int top = (state[j][i] >> 4);
 				int bottom = (state[j][i] & 0x0F);
-				System.out.println(x_box[top][bottom]);
+				state[j][i] = x_box[top][bottom];
 			}
 		}
-		
+//		print_array(state);
 	}
 	
 	static void shiftRows(){
