@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -9,18 +10,21 @@ public class AES
 {
 	protected static int [][] x_box;
 	protected static int [][] state;
+	protected static int [][] key;
+	
 	public static void main(String[] args) throws IOException 
 	{
 		fill_xbox();
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-		Scanner sc = new Scanner(new File (args[2]));
+		Scanner plaintext = new Scanner(new File(args[2]));
+		make_key(args);
 		
 		if (encrypt)
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
-			encrypt(sc, pw);
+			encrypt(plaintext, pw);
 			pw.close();
 		}
 		else
@@ -29,8 +33,9 @@ public class AES
 			decrypt();
 			pw.close();
 		}
-		sc.close();
+		plaintext.close();
 	}
+	
 	
 	static void encrypt(Scanner sc, PrintWriter pw){
 		while (sc.hasNextLine())
@@ -41,6 +46,38 @@ public class AES
 	
 	static void decrypt(){
 		
+	}
+	
+	
+	
+	private static void make_key(String[] args) throws FileNotFoundException {
+		Scanner the_key = new Scanner(new File(args[1]));
+		if(!the_key.hasNextLine()){
+			System.out.println("No key present");
+			System.exit(-1);
+		}else{
+			String k = the_key.nextLine();
+			if(!(k.length() == 32)){
+				System.out.println("Incorrect key size");
+				System.out.println(k);
+				System.exit(-1);
+			}else{
+				key = new int [4][4];
+				int subindex = 0;
+				ArrayList<Integer> al = new ArrayList<Integer>(); 
+				for (int i = 0; i < 16; i++){
+					al.add((Integer.decode("0x" +  k.substring(subindex, subindex+2))));
+					subindex+=2;
+				}
+				int count = 0;
+				for(int i = 0; i < key.length; i++){
+					for(int j = 0; j < key[i].length; j++){
+						key[j][i] = al.get(count++);	}
+				}
+//				print_array(key);
+			}
+		}
+		the_key.close();
 	}
 	
 	
@@ -75,7 +112,7 @@ public class AES
 				state[j][i] = al.get(count++);
 			}
 		}
-		print_array(state);
+//		print_array(state);
 		
 	}
 	
