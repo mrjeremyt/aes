@@ -108,16 +108,26 @@ public class AES
 		
 	}
 	
-	static void addRoundKey()
+	static int addRoundKey(int round)
 	{
-		
+		int[] state_col = null;
+		int[] ek_col = null;
+		int[] result = null;
+		for(int i = 0; i < state.length; i++){
+			
+			for(int j = 0; j < state[i].length; j++){
+				state_col[j] = state[j][i];
+				ek_col[j] = expanded_key[j][round++];
+			}
+			result = xor(state_col, ek_col);
+		}
+		return round;
 	}
 	
 	//Sub Word(Rot Word(EK((i-4)))) XOR Rcon((i/4)-1) XOR EK((i-4))
 	//EK((i-1))XOR EK((i-4))
 	private static void expand_key(){
 		expanded_key = new int[4][44];
-		
 		for(int i = 0; i <key.length; i++){
 			for(int j = 0; j < key[i].length; j++){
 				expanded_key[j][i] = key[j][i];		
@@ -126,7 +136,7 @@ public class AES
 		
 		for(int i = 4; i < 44; i++){
 			if((i%4) == 0){
-				int[] result = xor(xor(subword(rotword(ek(i-4))), archon(i)), ek(i-4));
+				int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
 				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}else{
@@ -134,8 +144,9 @@ public class AES
 				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}
+
 		}
-		print_array(expanded_key, true);
+//		print_array(expanded_key, true);
 	}
 	
 	private static int[] xor(int[] a, int[] b){
@@ -143,7 +154,10 @@ public class AES
 		for(int i = 0; i < result.length; i++){
 			result[i] = a[i] ^ b[i];
 		}
-//		print_array_1d(a, true);
+//		System.out.print("xor A: "); print_array_1d(a, true);
+//		System.out.print("xor B: "); print_array_1d(b, true);
+//		System.out.print("xor result: "); print_array_1d(result, true);
+//		System.out.println();
 		return result;
 	}
 	
@@ -293,10 +307,10 @@ public class AES
 	{
 		rcon = new int [][]
 		{
-			   {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36},
-			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			   {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x98},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 			};
 	}
 	
