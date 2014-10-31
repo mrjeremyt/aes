@@ -57,9 +57,13 @@ public class AES
 			int round = 1;
 			while(round++ < 10){
 				subBytes();
+				print_array(state, true);
 				shiftRows();
+				print_array(state, true);
 				mixColumns();
+				print_array(state, true);
 				ex_key = addRoundKey(ex_key);
+				print_array(state, true);
 			}
 			subBytes();
 			shiftRows();
@@ -145,8 +149,8 @@ public class AES
 	
 	static void mixColumns(){
 		ArrayList<int[]> cols = new ArrayList<int[]>();
-		int[] state_col = new int[4];
 		for(int i = 0; i < state.length; i++){
+			int[] state_col = new int[4];
 			for(int j = 0; j < state[i].length; j++){
 				state_col[j] = state[j][i];
 			}
@@ -155,7 +159,7 @@ public class AES
 		
 		for(int i = 0; i < cols.size(); i++){
 			for(int j = 0; j < cols.get(i).length; j++){
-				state[j][i] = matrix_multiply(cols.get(i), mix_col_matrix[j]);
+				state[j][i] = matrix_multiply(cols.get(i), mix_col_matrix[i]);
 			}
 		}
 	}
