@@ -143,6 +143,7 @@ public class AES
 		for(int i = 0; i < result.length; i++){
 			result[i] = a[i] ^ b[i];
 		}
+//		print_array_1d(a, true);
 		return result;
 	}
 	
@@ -251,6 +252,16 @@ public class AES
 					System.out.print(j + " ");
 			}
 			System.out.println();
+		}
+		System.out.println();
+	}
+	
+	static void print_array_1d (int[] a, boolean hex){
+		for (int i: a){
+			if (hex)
+				System.out.print(Integer.toHexString(i) + " ");
+			else
+				System.out.print(i + " ");
 		}
 		System.out.println();
 	}
