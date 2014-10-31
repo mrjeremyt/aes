@@ -45,8 +45,20 @@ public class AES
 		while (sc.hasNextLine())
 		{
 			make_a_state(sc);
+			int ex_key = 0;
+			ex_key = addRoundKey(ex_key);
+			
+			int round = 1;
+			while(round < 10){
+				subBytes();
+				shiftRows();
+				mixColumns();
+				ex_key = addRoundKey(ex_key);
+			}
 			subBytes();
 			shiftRows();
+			ex_key = addRoundKey(ex_key);
+			pw.println(string_from_state());
 		}
 	}
 	
@@ -54,6 +66,16 @@ public class AES
 		while(sc.hasNextLine()){
 			make_a_state(sc);
 		}
+	}
+	
+	static String string_from_state(){
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[i].length; j++){
+				sb.append(Integer.toHexString(state[j][i]));
+			}
+		}		
+		return sb.toString();
 	}
 	
 	static void subBytes(){
@@ -110,16 +132,17 @@ public class AES
 	
 	static int addRoundKey(int round)
 	{
-		int[] state_col = null;
-		int[] ek_col = null;
-		int[] result = null;
+		int[] state_col = new int[4];
+		int[] ek_col = new int[4];
 		for(int i = 0; i < state.length; i++){
-			
 			for(int j = 0; j < state[i].length; j++){
 				state_col[j] = state[j][i];
-				ek_col[j] = expanded_key[j][round++];
+				ek_col[j] = expanded_key[j][round];
+			}	round++;
+			state_col = xor(state_col, ek_col);
+			for(int j = 0; j < state[i].length; j++){
+				state[j][i] = state_col[j];
 			}
-			result = xor(state_col, ek_col);
 		}
 		return round;
 	}
