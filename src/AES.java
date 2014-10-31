@@ -118,11 +118,34 @@ public class AES
 		
 		for(int i = 0; i <key.length; i++){
 			for(int j = 0; j < key[i].length; j++){
-				expanded_key[j][i] = key[j][i];		}		}
+				expanded_key[j][i] = key[j][i];		
+				}		
+			}
 
 		
 	}
 	
+	private static void rotword (int offset)
+	{
+		int temp_0 = expanded_key [offset][0];
+		int temp_1 = expanded_key [offset][1];
+		int temp_2 = expanded_key [offset][2];
+		int temp_3 = expanded_key [offset][3];
+		
+		expanded_key[offset][0] = temp_1;
+		expanded_key[offset][1] = temp_2;
+		expanded_key[offset][2] = temp_3;
+		expanded_key[offset][3] = temp_0;
+	}
+	
+	private static  void subword (int offset)
+	{
+		for (int i = 0; i < 4; i++){
+			int top = (expanded_key[offset][i] >> 4);
+			int bottom = (expanded_key[offset][i] & 0x0F);
+			expanded_key[offset][i] = x_box[top][bottom];
+		}
+	}
 	
 	private static void make_key(String[] args) throws FileNotFoundException {
 		Scanner the_key = new Scanner(new File(args[1]));
