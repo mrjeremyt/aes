@@ -49,7 +49,7 @@ public class AES
 			ex_key = addRoundKey(ex_key);
 			
 			int round = 1;
-			while(round < 10){
+			while(round++ < 10){
 				subBytes();
 				shiftRows();
 				mixColumns();
@@ -138,7 +138,8 @@ public class AES
 			for(int j = 0; j < state[i].length; j++){
 				state_col[j] = state[j][i];
 				ek_col[j] = expanded_key[j][round];
-			}	round++;
+			}	
+			round++;
 			state_col = xor(state_col, ek_col);
 			for(int j = 0; j < state[i].length; j++){
 				state[j][i] = state_col[j];
