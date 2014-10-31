@@ -113,6 +113,8 @@ public class AES
 		
 	}
 	
+	//Sub Word(Rot Word(EK((i-4)))) XOR Rcon((i/4)-1) XOR EK((i-4))
+	//EK((i-1))XOR EK((i-4))
 	private static void expand_key(){
 		expanded_key = new int[4][44];
 		
@@ -121,30 +123,57 @@ public class AES
 				expanded_key[j][i] = key[j][i];		
 				}		
 			}
-
 		
-	}
-	
-	private static void rotword (int offset)
-	{
-		int temp_0 = expanded_key [0][offset];
-		int temp_1 = expanded_key [1][offset];
-		int temp_2 = expanded_key [2][offset];
-		int temp_3 = expanded_key [3][offset];
-		
-		expanded_key[0][offset] = temp_1;
-		expanded_key[1][offset] = temp_2;
-		expanded_key[2][offset] = temp_3;
-		expanded_key[3][offset] = temp_0;
-	}
-	
-	private static  void subword (int offset)
-	{
-		for (int i = 0; i < 4; i++){
-			int top = (expanded_key[i][offset] >> 4);
-			int bottom = (expanded_key[i][offset] & 0x0F);
-			expanded_key[i][offset] = x_box[top][bottom];
+		for(int i = 4; i < 44; i++){
+			if((i%4) == 0){
+				int[] result = xor(xor(subword(rotword(ek(i-4))), archon(i)), ek(i-4));
+				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+			}else{
+				int[] result = xor(ek(i-1), ek(i-4));
+				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+			}
 		}
+		print_array(expanded_key, true);
+	}
+	
+	private static int[] xor(int[] a, int[] b){
+		int[] result = new int[a.length];
+		for(int i = 0; i < result.length; i++){
+			result[i] = a[i] ^ b[i];
+		}
+		return result;
+	}
+	
+	private static int[] ek(int offset){
+		 return new int [] {expanded_key[0][offset], expanded_key[1][offset], expanded_key[2][offset], expanded_key[3][offset]	};
+	}
+	
+	private static int[] archon(int offset){
+		int math = ((offset/4) - 1);
+		 return new int [] {rcon[0][math], rcon[1][math], rcon[2][math], rcon[3][math]	};
+	}
+	
+	private static int[] rotword (int[] offset)
+	{
+		int temp_0 = offset [0];
+		int temp_1 = offset [1];
+		int temp_2 = offset [2];
+		int temp_3 = offset [3];
+		
+		return new int[] {temp_1, temp_2, temp_3, temp_0}; 
+	}
+	
+	private static int[] subword (int[] offset)
+	{
+		int[] result = new int[4];
+		for (int i = 0; i < 4; i++){
+			int top = (offset[i] >> 4);
+			int bottom = (offset[i] & 0x0F);
+			result[i] = x_box[top][bottom];
+		}
+		return result;
 	}
 	
 	private static void make_key(String[] args) throws FileNotFoundException {
@@ -213,10 +242,13 @@ public class AES
 		
 	}
 	
-	static void print_array(int[][] a){
+	static void print_array(int[][] a, boolean hex){
 		for(int[] i: a){
 			for(int j: i){
-				System.out.print(j + " ");
+				if(hex)
+					System.out.print(Integer.toHexString(j) + " ");
+				else
+					System.out.print(j + " ");
 			}
 			System.out.println();
 		}
