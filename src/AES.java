@@ -127,23 +127,23 @@ public class AES
 	
 	private static void rotword (int offset)
 	{
-		int temp_0 = expanded_key [offset][0];
-		int temp_1 = expanded_key [offset][1];
-		int temp_2 = expanded_key [offset][2];
-		int temp_3 = expanded_key [offset][3];
+		int temp_0 = expanded_key [0][offset];
+		int temp_1 = expanded_key [1][offset];
+		int temp_2 = expanded_key [2][offset];
+		int temp_3 = expanded_key [3][offset];
 		
-		expanded_key[offset][0] = temp_1;
-		expanded_key[offset][1] = temp_2;
-		expanded_key[offset][2] = temp_3;
-		expanded_key[offset][3] = temp_0;
+		expanded_key[0][offset] = temp_1;
+		expanded_key[1][offset] = temp_2;
+		expanded_key[2][offset] = temp_3;
+		expanded_key[3][offset] = temp_0;
 	}
 	
 	private static  void subword (int offset)
 	{
 		for (int i = 0; i < 4; i++){
-			int top = (expanded_key[offset][i] >> 4);
-			int bottom = (expanded_key[offset][i] & 0x0F);
-			expanded_key[offset][i] = x_box[top][bottom];
+			int top = (expanded_key[i][offset] >> 4);
+			int bottom = (expanded_key[i][offset] & 0x0F);
+			expanded_key[i][offset] = x_box[top][bottom];
 		}
 	}
 	
