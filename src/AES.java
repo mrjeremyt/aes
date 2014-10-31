@@ -21,6 +21,8 @@ public class AES
 	{
 		fill_xbox();
 		fill_rcon();
+		fill_e();
+		fill_l();
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
@@ -142,18 +144,20 @@ public class AES
 	}
 	
 	static void mixColumns(){
+		ArrayList<int[]> cols = new ArrayList<int[]>();
+		int[] state_col = new int[4];
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[i].length; j++){
+				state_col[j] = state[j][i];
+			}
+			cols.add(state_col);
+		}
 		
-		int[][] a = new int[][]{{1, 2}, {2, 0}};
-		int[][] b = new int[][]{{0, 1}, {1, 2}};
-		print_array(matrix_multiply(a, b), false);
-		
-		
-
-
-		
-		
-		
-		
+		for(int i = 0; i < cols.size(); i++){
+			for(int j = 0; j < cols.get(i).length; j++){
+				state[j][i] = matrix_multiply(cols.get(i), mix_col_matrix[j]);
+			}
+		}
 	}
 	
 	static int addRoundKey(int round)
@@ -200,19 +204,37 @@ public class AES
 	}
 	
 	
-	private static int[][] matrix_multiply(int[][] a, int[][] b) {
-	       int rowsInA = a.length;
-	       int columnsInA = a[0].length; // same as rows in B
-	       int columnsInB = b[0].length;
-	       int[][] c = new int[rowsInA][columnsInB];
-	       for (int i = 0; i < rowsInA; i++) {
-	           for (int j = 0; j < columnsInB; j++) {
-	               for (int k = 0; k < columnsInA; k++) {
-	                   c[i][j] = c[i][j] + a[i][k] * b[k][j];
-	               }
-	           }
-	       }
-	       return c;
+	private static int matrix_multiply(int[] x, int[] y) {
+		int x0 = x[0];
+		int x1 = x[1];
+		int x2 = x[2];
+		int x3 = x[3];
+		
+		int y0 = y[0];
+		int y1 = y[1];
+		int y2 = y[2];
+		int y3 = y[3];
+		
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		ArrayList<Integer> list_2 = new ArrayList<Integer>();
+		
+		list.add(x0); list.add(x1); list.add(x2); list.add(x3);
+		list_2.add(y0); list_2.add(y1); list_2.add(y2); list_2.add(y3);
+		
+		ArrayList<Integer> results = new ArrayList<Integer>();
+		
+		for(int i = 0; i < list.size(); i++){
+			int top = list.get(i) >> 4;
+			int bottom = list.get(i) & 0x0F;
+			
+			int top_2 = list_2.get(i) >> 4;
+			int bottom_2 = list_2.get(i) & 0x0F;
+			
+			int result = l_table[top][bottom] + l_table[top_2][bottom_2];
+			if(result > 0xFF){	result -= 0xFF;		}
+			results.add(result);
+		}		
+		return results.get(0) ^ results.get(1) ^ results.get(2) ^ results.get(3);
 	   }
 	
 	
