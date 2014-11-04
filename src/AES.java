@@ -57,17 +57,18 @@ public class AES
 			int round = 1;
 			while(round++ < 10){
 				subBytes();
-				print_array(state, true);
+//				print_array(state, true);
 				shiftRows();
-				print_array(state, true);
+//				print_array(state, true);
 				mixColumns();
-				print_array(state, true);
+//				print_array(state, true);
 				ex_key = addRoundKey(ex_key);
-				print_array(state, true);
+//				print_array(state, true);
 			}
 			subBytes();
 			shiftRows();
 			ex_key = addRoundKey(ex_key);
+//			print_array(state, true);
 			pw.println(string_from_state());
 		}
 	}
@@ -148,21 +149,84 @@ public class AES
 	}
 	
 	static void mixColumns(){
-		ArrayList<int[]> cols = new ArrayList<int[]>();
-		for(int i = 0; i < state.length; i++){
-			int[] state_col = new int[4];
-			for(int j = 0; j < state[i].length; j++){
-				state_col[j] = state[j][i];
-			}
-			cols.add(state_col);
-		}
+//		ArrayList<int[]> cols = new ArrayList<int[]>();
+//		for(int i = 0; i < state.length; i++){
+//			int[] state_col = new int[4];
+//			for(int j = 0; j < state[i].length; j++){
+//				state_col[j] = state[j][i];
+//			}
+//			cols.add(state_col);
+//		}
+////		print_array_1d(cols.get(0),true);
+////		print_array_1d(cols.get(1),true);
+////		print_array_1d(cols.get(2),true);
+////		print_array_1d(cols.get(3),true);
+////		System.out.println();
+//		
+//		for(int i = 0; i < cols.size(); i++){
+//			for(int j = 0; j < cols.get(i).length; j++){
+//				state[j][i] = matrix_multiply(cols.get(i), mix_col_matrix[i]);
+//			}
+//		}
 		
-		for(int i = 0; i < cols.size(); i++){
-			for(int j = 0; j < cols.get(i).length; j++){
-				state[j][i] = matrix_multiply(cols.get(i), mix_col_matrix[i]);
-			}
+		for(int i = 0; i < 4; i++){
+			mixColumn2(i);
 		}
 	}
+	
+	
+////////////////////////the mixColumns Tranformation ////////////////////////
+	private static int mul (int a, int b) {
+		int inda = (a < 0) ? (a + 256) : a;
+		int indb = (b < 0) ? (b + 256) : b;
+		
+		if ( (a != 0) && (b != 0) ) {
+			int index = (l_table[inda/16][inda%16] + l_table[indb/16][indb%16]);
+			if(index > 0xFF) index -= 0xFF;
+			int val = (e_table[index >> 4][index & 0x0F] );
+			return val;
+		}
+		else 
+			return 0;
+	} // mul
+	
+//In the following two methods, the input c is the column number in
+//your evolving state matrix st (which originally contained 
+//the plaintext input but is being modified).  Notice that the state here is defined as an
+//array of bytes.  If your state is an array of integers, you'll have
+//to make adjustments. 
+	
+	public static void mixColumn2 (int c) {
+		//This is another alternate version of mixColumn, using the 
+		//logtables to do the computation.
+		
+		int a[] = new int[4];
+		
+		//note that a is just a copy of st[.][c]
+		for (int i = 0; i < 4; i++) 
+			a[i] = state[i][c];
+		
+		//This is exactly the same as mixColumns1, if 
+		//the mul columns somehow match the b columns there.
+		state[0][c] = (mul(2,a[0]) ^ a[2] ^ a[3] ^ mul(3,a[1]));
+		state[1][c] = (mul(2,a[1]) ^ a[3] ^ a[0] ^ mul(3,a[2]));
+		state[2][c] = (mul(2,a[2]) ^ a[0] ^ a[1] ^ mul(3,a[3]));
+		state[3][c] = (mul(2,a[3]) ^ a[1] ^ a[2] ^ mul(3,a[0]));
+	} // mixColumn2
+	
+	public void invMixColumn2 (int c) {
+		int a[] = new int[4];
+		
+		//note that a is just a copy of st[.][c]
+		for (int i = 0; i < 4; i++) 
+			a[i] = state[i][c];
+		
+		state[0][c] = (byte)(mul(0xE,a[0]) ^ mul(0xB,a[1]) ^ mul(0xD, a[2]) ^ mul(0x9,a[3]));
+		state[1][c] = (byte)(mul(0xE,a[1]) ^ mul(0xB,a[2]) ^ mul(0xD, a[3]) ^ mul(0x9,a[0]));
+		state[2][c] = (byte)(mul(0xE,a[2]) ^ mul(0xB,a[3]) ^ mul(0xD, a[0]) ^ mul(0x9,a[1]));
+		state[3][c] = (byte)(mul(0xE,a[3]) ^ mul(0xB,a[0]) ^ mul(0xD, a[1]) ^ mul(0x9,a[2]));
+	} // invMixColumn2
+	
 	
 	static int addRoundKey(int round)
 	{
@@ -206,40 +270,6 @@ public class AES
 		}
 //		print_array(expanded_key, true);
 	}
-	
-	
-	private static int matrix_multiply(int[] x, int[] y) {
-		int x0 = x[0];
-		int x1 = x[1];
-		int x2 = x[2];
-		int x3 = x[3];
-		
-		int y0 = y[0];
-		int y1 = y[1];
-		int y2 = y[2];
-		int y3 = y[3];
-		
-		ArrayList<Integer> list = new ArrayList<Integer>();
-		ArrayList<Integer> list_2 = new ArrayList<Integer>();
-		
-		list.add(x0); list.add(x1); list.add(x2); list.add(x3);
-		list_2.add(y0); list_2.add(y1); list_2.add(y2); list_2.add(y3);
-		
-		ArrayList<Integer> results = new ArrayList<Integer>();
-		
-		for(int i = 0; i < list.size(); i++){
-			int top = list.get(i) >> 4;
-			int bottom = list.get(i) & 0x0F;
-			
-			int top_2 = list_2.get(i) >> 4;
-			int bottom_2 = list_2.get(i) & 0x0F;
-			
-			int result = l_table[top][bottom] + l_table[top_2][bottom_2];
-			if(result > 0xFF){	result -= 0xFF;		}
-			results.add(result);
-		}		
-		return results.get(0) ^ results.get(1) ^ results.get(2) ^ results.get(3);
-	   }
 	
 	
 	
