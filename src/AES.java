@@ -83,29 +83,29 @@ public class AES
 		while (sc.hasNextLine())
 		{
 			make_a_state(sc);
-			print_array(state, true);
+//			print_array(state, true);
 			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
-			print_array(state, true);
+//			print_array(state, true);
 			invShiftRows();
-			print_array(state, true);
+//			print_array(state, true);
 			invSubBytes();
-			print_array(state, true);
+//			print_array(state, true);
 			
 			int round = 9;
 			while(round-- > 0){
 				ex_key = invAddRoundKey(ex_key);
-				print_array(state, true);
+//				print_array(state, true);
 				invMixColumns();
-				print_array(state, true);
+//				print_array(state, true);
 				invShiftRows();
-				print_array(state, true);
+//				print_array(state, true);
 				invSubBytes();
-				print_array(state, true);
+//				print_array(state, true);
 			}
 
 			ex_key = invAddRoundKey(ex_key);
-			print_array(state, true);
+//			print_array(state, true);
 			pw.println(string_from_state());
 		}
 	}
@@ -130,7 +130,13 @@ public class AES
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < state.length; i++){
 			for(int j = 0; j < state[i].length; j++){
-				sb.append(Integer.toHexString(state[j][i]));
+				String result = Integer.toHexString(state[j][i]);
+				System.out.println("result: " + result);
+				if(result.equals("0")){
+					result = "00";
+					System.out.println("in the print case");
+				}
+				sb.append(result);
 			}
 		}		
 		return sb.toString();
