@@ -52,8 +52,10 @@ public class AES
 		while (sc.hasNextLine())
 		{
 			make_a_state(sc);
+//			print_array(state, true);
 			int ex_key = 0;
 			ex_key = addRoundKey(ex_key);
+//			print_array(state, true);
 			
 			int round = 1;
 			while(round++ < 10){
@@ -67,9 +69,10 @@ public class AES
 //				print_array(state, true);
 			}
 			subBytes();
+//			print_array(state, true);
 			shiftRows();
+//			print_array(state, true);
 			ex_key = addRoundKey(ex_key);
-			System.out.println(ex_key);
 //			print_array(state, true);
 			pw.println(string_from_state());
 		}
@@ -80,21 +83,29 @@ public class AES
 		while (sc.hasNextLine())
 		{
 			make_a_state(sc);
+			print_array(state, true);
 			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
-//			System.out.println("ex_key: " +ex_key);
+			print_array(state, true);
 			invShiftRows();
+			print_array(state, true);
 			invSubBytes();
+			print_array(state, true);
 			
 			int round = 9;
 			while(round-- > 0){
 				ex_key = invAddRoundKey(ex_key);
+				print_array(state, true);
 				invMixColumns();
+				print_array(state, true);
 				invShiftRows();
+				print_array(state, true);
 				invSubBytes();
+				print_array(state, true);
 			}
 
 			ex_key = invAddRoundKey(ex_key);
+			print_array(state, true);
 			pw.println(string_from_state());
 		}
 	}
@@ -109,7 +120,7 @@ public class AES
 //				System.out.println("i: " + i);
 //				System.out.println("j: " + j);
 //				System.out.println("state: " + state[j][i]);
-//				state[j][i] = inv_x_box[top][bottom];
+				state[j][i] = inv_x_box[top][bottom];
 			}
 		}
 	}
@@ -188,18 +199,17 @@ public class AES
 		
 		//first shift
 		temp_1 = row_1[3];
-		row_1[0] = temp_1; row_1[1] = row_1[0]; row_1[2] = row_1[1]; row_1[3] = row_1[2];
+		row_1[3] = row_1[2]; row_1[2] = row_1[1]; row_1[1] = row_1[0]; row_1[0] = temp_1; 
 		
 		//second shift
 		temp_1 = row_2[3];
 		temp_2 = row_2[2];
-		row_2[0] = temp_2; row_2[1] = temp_1; row_2[2] = row_2[0]; row_2[3] = row_2[1];
-		
+		row_2[3] = row_2[1]; row_2[2] = row_2[0]; row_2[0] = temp_2; row_2[1] = temp_1;
 		//third shift
 		temp_1 = row_3[1];
 		temp_2 = row_3[2];
 		temp_3 = row_3[3];
-		row_3[0] = temp_1; row_3[1] = temp_2; row_3[2] = temp_3; row_3[3] = row_3[0];
+		row_3[3] = row_3[0]; row_3[0] = temp_1; row_3[1] = temp_2; row_3[2] = temp_3;
 		
 		//put back into state
 		state[1] = row_1;
@@ -266,10 +276,10 @@ public class AES
 		for (int i = 0; i < 4; i++) 
 			a[i] = state[i][c];
 		
-		state[0][c] = (byte)(mul(0xE,a[0]) ^ mul(0xB,a[1]) ^ mul(0xD, a[2]) ^ mul(0x9,a[3]));
-		state[1][c] = (byte)(mul(0xE,a[1]) ^ mul(0xB,a[2]) ^ mul(0xD, a[3]) ^ mul(0x9,a[0]));
-		state[2][c] = (byte)(mul(0xE,a[2]) ^ mul(0xB,a[3]) ^ mul(0xD, a[0]) ^ mul(0x9,a[1]));
-		state[3][c] = (byte)(mul(0xE,a[3]) ^ mul(0xB,a[0]) ^ mul(0xD, a[1]) ^ mul(0x9,a[2]));
+		state[0][c] = (mul(0xE,a[0]) ^ mul(0xB,a[1]) ^ mul(0xD, a[2]) ^ mul(0x9,a[3]));
+		state[1][c] = (mul(0xE,a[1]) ^ mul(0xB,a[2]) ^ mul(0xD, a[3]) ^ mul(0x9,a[0]));
+		state[2][c] = (mul(0xE,a[2]) ^ mul(0xB,a[3]) ^ mul(0xD, a[0]) ^ mul(0x9,a[1]));
+		state[3][c] = (mul(0xE,a[3]) ^ mul(0xB,a[0]) ^ mul(0xD, a[1]) ^ mul(0x9,a[2]));
 	} // invMixColumn2
 	
 	
@@ -295,14 +305,14 @@ public class AES
 	{
 		int[] state_col = new int[4];
 		int[] ek_col = new int[4];
-		for(int i = 0; i < state.length; i++){
-			for(int j = 0; j < state[i].length; j++){
+		for(int i = 3; i >= 0; i--){
+			for(int j = 0; j < 4; j++){
 				state_col[j] = state[j][i];
 				ek_col[j] = expanded_key[j][round];
 			}	
 			round--;
 			state_col = xor(state_col, ek_col);
-			for(int j = 0; j < state[i].length; j++){
+			for(int j = 0; j < 4; j++){
 				state[j][i] = state_col[j];
 			}
 		}
