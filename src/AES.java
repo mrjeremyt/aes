@@ -74,7 +74,10 @@ public class AES
 //			print_array(state, true);
 			ex_key = addRoundKey(ex_key);
 //			print_array(state, true);
-			pw.println(string_from_state());
+			if(sc.hasNextLine())
+				pw.println(string_from_state());
+			else
+				pw.print(string_from_state());
 		}
 	}
 
@@ -106,7 +109,35 @@ public class AES
 
 			ex_key = invAddRoundKey(ex_key);
 //			print_array(state, true);
-			pw.println(string_from_state());
+			if(sc.hasNextLine())
+				pw.println(string_from_state());
+			else
+				pw.print(string_from_state());
+		}
+	}
+	
+	static String string_from_state(){
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[i].length; j++){
+				String result = Integer.toHexString(state[j][i]);
+				if(result.equals("0") && result.length() == 1)
+					result = "00";
+				else if(result.length() == 1)
+					result = "0" + result;
+				sb.append(result);
+			}
+		}		
+		return sb.toString();
+	}
+	
+	static void subBytes(){
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[0].length; j++){
+				int top = (state[j][i] >> 4);
+				int bottom = (state[j][i] & 0x0F);
+				state[j][i] = x_box[top][bottom];
+			}
 		}
 	}
 	
@@ -115,43 +146,9 @@ public class AES
 			for(int j = 0; j < state[0].length; j++){
 				int top = (state[j][i] >> 4);
 				int bottom = (state[j][i] & 0x0F);
-//				System.out.println("top: " + top);
-//				System.out.println("bottom: " + bottom);
-//				System.out.println("i: " + i);
-//				System.out.println("j: " + j);
-//				System.out.println("state: " + state[j][i]);
 				state[j][i] = inv_x_box[top][bottom];
 			}
 		}
-	}
-
-
-	static String string_from_state(){
-		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < state.length; i++){
-			for(int j = 0; j < state[i].length; j++){
-				String result = Integer.toHexString(state[j][i]);
-				System.out.println("result: " + result);
-				if(result.equals("0")){
-					result = "00";
-					System.out.println("in the print case");
-				}
-				sb.append(result);
-			}
-		}		
-		return sb.toString();
-	}
-	
-	static void subBytes(){
-//		print_array(state);
-		for(int i = 0; i < state.length; i++){
-			for(int j = 0; j < state[0].length; j++){
-				int top = (state[j][i] >> 4);
-				int bottom = (state[j][i] & 0x0F);
-				state[j][i] = x_box[top][bottom];
-			}
-		}
-//		print_array(state);
 	}
 	
 	static void shiftRows(){
@@ -165,7 +162,6 @@ public class AES
 		int temp_2;
 		int temp_3;
 		
-//		print_array(state);
 		
 		//first shift
 		temp_1 = row_1[0];
@@ -186,8 +182,6 @@ public class AES
 		state[1] = row_1;
 		state[2] = row_2;
 		state[3] = row_3;
-		
-//		print_array(state);
 	}
 	
 	static void invShiftRows(){
@@ -200,9 +194,7 @@ public class AES
 		int temp_1;
 		int temp_2;
 		int temp_3;
-		
-//		print_array(state);
-		
+			
 		//first shift
 		temp_1 = row_1[3];
 		row_1[3] = row_1[2]; row_1[2] = row_1[1]; row_1[1] = row_1[0]; row_1[0] = temp_1; 
@@ -221,8 +213,6 @@ public class AES
 		state[1] = row_1;
 		state[2] = row_2;
 		state[3] = row_3;
-		
-//		print_array(state);
 	}
 	
 	private static void mixColumns(){		
@@ -249,13 +239,7 @@ public class AES
 		}
 		else 
 			return 0;
-	} // mul
-	
-//In the following two methods, the input c is the column number in
-//your evolving state matrix st (which originally contained 
-//the plaintext input but is being modified).  Notice that the state here is defined as an
-//array of bytes.  If your state is an array of integers, you'll have
-//to make adjustments. 
+	} 
 	
 	public static void mixColumn2 (int c) {
 		//This is another alternate version of mixColumn, using the 
@@ -273,7 +257,7 @@ public class AES
 		state[1][c] = (mul(2,a[1]) ^ a[3] ^ a[0] ^ mul(3,a[2]));
 		state[2][c] = (mul(2,a[2]) ^ a[0] ^ a[1] ^ mul(3,a[3]));
 		state[3][c] = (mul(2,a[3]) ^ a[1] ^ a[2] ^ mul(3,a[0]));
-	} // mixColumn2
+	} 
 	
 	public static void invMixColumn2 (int c) {
 		int a[] = new int[4];
@@ -286,7 +270,7 @@ public class AES
 		state[1][c] = (mul(0xE,a[1]) ^ mul(0xB,a[2]) ^ mul(0xD, a[3]) ^ mul(0x9,a[0]));
 		state[2][c] = (mul(0xE,a[2]) ^ mul(0xB,a[3]) ^ mul(0xD, a[0]) ^ mul(0x9,a[1]));
 		state[3][c] = (mul(0xE,a[3]) ^ mul(0xB,a[0]) ^ mul(0xD, a[1]) ^ mul(0x9,a[2]));
-	} // invMixColumn2
+	} 
 	
 	
 	private static int addRoundKey(int round)
@@ -325,8 +309,6 @@ public class AES
 		return round;
 	}
 	
-	//Sub Word(Rot Word(EK((i-4)))) XOR Rcon((i/4)-1) XOR EK((i-4))
-	//EK((i-1))XOR EK((i-4))
 	private static void expand_key(){
 		expanded_key = new int[4][44];
 		for(int i = 0; i <key.length; i++){
@@ -345,9 +327,7 @@ public class AES
 				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}
-
 		}
-//		print_array(expanded_key, true);
 	}
 	
 	
@@ -357,10 +337,6 @@ public class AES
 		for(int i = 0; i < result.length; i++){
 			result[i] = a[i] ^ b[i];
 		}
-//		System.out.print("xor A: "); print_array_1d(a, true);
-//		System.out.print("xor B: "); print_array_1d(b, true);
-//		System.out.print("xor result: "); print_array_1d(result, true);
-//		System.out.println();
 		return result;
 	}
 	
@@ -373,8 +349,7 @@ public class AES
 		 return new int [] {rcon[0][math], rcon[1][math], rcon[2][math], rcon[3][math]	};
 	}
 	
-	private static int[] rotword (int[] offset)
-	{
+	private static int[] rotword (int[] offset){
 		int temp_0 = offset [0];
 		int temp_1 = offset [1];
 		int temp_2 = offset [2];
@@ -383,8 +358,7 @@ public class AES
 		return new int[] {temp_1, temp_2, temp_3, temp_0}; 
 	}
 	
-	private static int[] subword (int[] offset)
-	{
+	private static int[] subword (int[] offset){
 		int[] result = new int[4];
 		for (int i = 0; i < 4; i++){
 			int top = (offset[i] >> 4);
@@ -397,14 +371,11 @@ public class AES
 	private static void make_key(String[] args) throws FileNotFoundException {
 		Scanner the_key = new Scanner(new File(args[1]));
 		if(!the_key.hasNextLine()){
-			System.out.println("No key present");
-			System.exit(-1);
+			System.out.println("No key present");	System.exit(-1);
 		}else{
 			String k = the_key.nextLine();
 			if(!(k.length() == 32)){
-				System.out.println("Incorrect key size");
-				System.out.println(k);
-				System.exit(-1);
+				System.out.println("Incorrect key size");	System.exit(-1);
 			}else{
 				key = new int [4][4];
 				int subindex = 0;
@@ -418,28 +389,23 @@ public class AES
 					for(int j = 0; j < key[i].length; j++){
 						key[j][i] = al.get(count++);	}
 				}
-//				print_array(key);
 			}
 		}
 		the_key.close();
 	}
 	
 	
-	static void make_a_state(Scanner sc)
-	{
+	static void make_a_state(Scanner sc){
 		String test_state = sc.nextLine();
-		if (test_state.length() > 32) 
-		{
+		if (test_state.length() > 32) {
 			//Truncate sheet.
 			test_state = test_state.substring(0, 32);
 		}
-		else if (test_state.length() < 32)
-		{
+		else if (test_state.length() < 32)	{
 			//Paaaaaad 0s at back.
 			StringBuilder sb = new StringBuilder(test_state);
 			while(sb.length() < 32)
 				sb.append('0');
-			
 			test_state = sb.toString();		
 		}
 		
@@ -455,9 +421,7 @@ public class AES
 			for(int j = 0; j < state[i].length; j++){
 				state[j][i] = al.get(count++);
 			}
-		}
-//		print_array(state);
-		
+		}		
 	}
 	
 	static void print_array(int[][] a, boolean hex){
@@ -541,7 +505,6 @@ public class AES
 			};
 	}
 	
-	
 	static void fill_e(){
 		e_table = new int [][]
 		{
@@ -564,7 +527,6 @@ public class AES
 		};
 	}
 
-	
 	static void fill_l(){
 		l_table = new int [][]
 		{
@@ -586,6 +548,4 @@ public class AES
 				{0x67, 0x4A, 0xED, 0xDE, 0xC5, 0x31, 0xFE, 0x18, 0x0D, 0x63, 0x8C, 0x80, 0xC0, 0xF7, 0x70, 0x07,}  
 		};		
 	}
-	
-	
 }
