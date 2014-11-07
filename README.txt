@@ -77,9 +77,12 @@ test3.enc.dec
 
 
 [Extra Credit]
-(Note all of this needs to be ran with the 7 arguments)
-we've implemented the generic file encryption. the program now takes text files and successfully encrypts and decrypts them
-I'll include the 3 tests we ran and the bandwidths.
+(Note: this version works with both the full 7 parameters and the minimum 3)
+We've implemented the 3 key versions for this program. you just need to specify the key length and provide a valid key and the 
+program will encrypt it fine. So this works for 128, 192, and 256 bit keys.  
+
+we've also implemented the generic file encryption. the program now takes text files and successfully encrypts and decrypts them
+I'll include the 3 tests we ran and the bandwidths. The included files are ran with the 128 bit encryption.
 
 [Test Cases]
 [test1]

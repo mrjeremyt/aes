@@ -62,6 +62,15 @@ public class AES
 			if(!args[4].toLowerCase().equals("ecb"))
 				ecb = false;
 			
+		}else if(args.length == 3){
+			key_size = 128;
+			key = new File(args[1]);
+			if(!encrypt){
+				s = new Scanner(new File(args[2])); 
+				f = new File(args[2].toString() + ".dec");
+			}
+			else
+				path = Paths.get(args[2]);
 		}else{
 			System.out.println("Incorrect execution line"); System.exit(-1);
 		}
@@ -86,7 +95,11 @@ public class AES
 		
 		if (encrypt)
 		{
-			PrintWriter pw = new PrintWriter(new File (args[6].toString() + ".enc"));
+			PrintWriter pw = null;
+			if(args.length == 7)
+				pw = new PrintWriter(new File (args[6].toString() + ".enc"));
+			else
+				pw = new PrintWriter(new File (args[2].toString() + ".enc"));
 			sc.start();
 			encrypt(pw, is, s);
 			sc.stop();
@@ -381,26 +394,43 @@ public class AES
 				}
 			}
 		}else if(key_size == 192){
-			expanded_key = new int[4][44];
-			for(int i = 0; i <key.length; i++){
-				for(int j = 0; j < key[i].length; j++){
+			expanded_key = new int[4][(num_rounds + 1) *4];
+			for(int i = 0; i <key[0].length; i++){
+				for(int j = 0; j < key.length; j++){
 					expanded_key[j][i] = key[j][i];		
 				}		
 			}
 
-			for(int i = 4; i < 44; i++){
-				if((i%4) == 0){
-					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
+			for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
+				if((i%6) == 0){
+					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-6));
 					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 				}else{
-					int[] result = xor(ek(i-1), ek(i-4));
+					int[] result = xor(ek(i-1), ek(i-6));
 					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 				}
 			}
 		}else if(key_size == 256){
-			
+			expanded_key = new int[4][(num_rounds + 1) *4];
+			for(int i = 0; i <key[0].length; i++){
+				for(int j = 0; j < key.length; j++){
+					expanded_key[j][i] = key[j][i];		
+				}		
+			}
+
+			for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
+				if((i%8) == 0){
+					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-8));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}else{
+					int[] result = xor(ek(i-1), ek(i-8));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}
+			}
 		}else{
 			System.out.println("bad things"); System.exit(-1);
 		}
@@ -450,24 +480,20 @@ public class AES
 			System.out.println("No key present");	System.exit(-1);
 		}else{
 			String k = the_key.nextLine();
-			if(!(k.length() == 32)){
-				System.out.println("Incorrect key size");	System.exit(-1);
-			}else{
-				if(key_size == 128){	key = new int [4][4]; num_rounds = 10;	}
-				else if(key_size == 192){	key = new int [4][6]; num_rounds = 12; }
-				else if(key_size == 256){	key = new int [4][8]; num_rounds = 14; }
-				else{ System.out.println("Incorrect key size"); System.exit(-1);}
-				int subindex = 0;
-				ArrayList<Integer> al = new ArrayList<Integer>(); 
-				for (int i = 0; i < 16; i++){
-					al.add((Integer.decode("0x" +  k.substring(subindex, subindex+2))));
-					subindex+=2;
-				}
-				int count = 0;
-				for(int i = 0; i < key.length; i++){
-					for(int j = 0; j < key[i].length; j++){
-						key[j][i] = al.get(count++);	}
-				}
+			if(key_size == 128){	key = new int [4][4]; num_rounds = 10;	}
+			else if(key_size == 192){	key = new int [4][6]; num_rounds = 12; }
+			else if(key_size == 256){	key = new int [4][8]; num_rounds = 14; }
+			else{ System.out.println("Incorrect key size"); System.exit(-1);}
+			int subindex = 0;
+			ArrayList<Integer> al = new ArrayList<Integer>();
+			for (int i = 0; i < (key_size / 8); i++){
+				al.add((Integer.decode("0x" +  k.substring(subindex, subindex+2))));
+				subindex+=2;
+			}
+			int count = 0;
+			for(int i = 0; i < key[0].length; i++){
+				for(int j = 0; j < key.length; j++){
+					key[j][i] = al.get(count++);	}
 			}
 		}
 		the_key.close();
