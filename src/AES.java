@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
 
@@ -22,6 +23,7 @@ public class AES
 	protected static int [][] l_table;
 	protected static int [][] mix_col_matrix; 
 	protected static int num_bytes;
+	protected static boolean encrypt;
 	
 	public static void main(String[] args) throws IOException 
 	{
@@ -31,28 +33,25 @@ public class AES
 		fill_e();
 		fill_l();
 
-		Boolean encrypt = true;
+		encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
 		
 		int key_size = 0;
 		boolean ecb = true;
 		File key = null;
-		Scanner file = null;
 		Path path = null;
 		
 		if(args.length == 7){
 			key_size = Integer.parseInt(args[2]);
 			key = new File(args[5]);
 			path = Paths.get(args[6]);
-			file = new Scanner(new File(args[6]));
 			if(!args[4].toLowerCase().equals("ecb"))
 				ecb = false;
 			
 		}else{
 			key = new File(args[1]);
 			path = Paths.get(args[2]);
-			file = new Scanner(new File(args[2]));
 			key_size = 128;
 			ecb = true;
 		}
@@ -74,7 +73,7 @@ public class AES
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
 			sc.start();
-			encrypt(file, pw, is);
+			encrypt(pw, is);
 			sc.stop();
 			pw.close();
 			System.out.println("Encryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
@@ -83,19 +82,18 @@ public class AES
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
 			sc.start();
-			decrypt(file, pw, is);
+			decrypt(pw, is);
 			sc.stop();
 			pw.close();
 			System.out.println("Decryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
 		}
-		file.close();
 	}
 	
 	
-	static void encrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
-		while (sc.hasNextLine())
+	static void encrypt(PrintWriter pw, ByteArrayInputStream is){
+		while (is.available() > 0)
 		{
-			make_a_state(sc, is);
+			make_a_state(is);
 			int ex_key = 0;
 			ex_key = addRoundKey(ex_key);
 			
@@ -109,7 +107,7 @@ public class AES
 			subBytes();
 			shiftRows();
 			ex_key = addRoundKey(ex_key);
-			if(sc.hasNextLine())
+			if(is.available() > 0)
 				pw.println(string_from_state());
 			else
 				pw.print(string_from_state());
@@ -117,10 +115,10 @@ public class AES
 	}
 
 
-	static void decrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
-		while (sc.hasNextLine())
+	static void decrypt(PrintWriter pw, ByteArrayInputStream is){
+		while (is.available() > 0)
 		{
-			make_a_state(sc, is);
+			make_a_state(is);
 			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
 			invShiftRows();
@@ -135,7 +133,7 @@ public class AES
 			}
 
 			ex_key = invAddRoundKey(ex_key);
-			if(sc.hasNextLine())
+			if(is.available() > 0)
 				pw.println(string_from_state());
 			else
 				pw.print(string_from_state());
@@ -421,50 +419,41 @@ public class AES
 	}
 	
 	
-	static void make_a_state(Scanner sc, ByteArrayInputStream is){
-		String test_state = sc.nextLine();
-		if (test_state.length() > 32) {
-			//Truncate sheet.
-			test_state = test_state.substring(0, 32);
-		}
-		else if (test_state.length() < 32)	{
-			//Paaaaaad 0s at back.
-			StringBuilder sb = new StringBuilder(test_state);
-			while(sb.length() < 32)
-				sb.append('0');
-			test_state = sb.toString();		
-		}
+	static void make_a_state(ByteArrayInputStream is){	
+		state = new int[4][4];
+		ArrayList<Integer> al = new ArrayList<Integer>();
 		
-		state = new int [4][4];
-		int subindex = 0;
-		ArrayList<Integer> al = new ArrayList<Integer>(); 
-		for (int i = 0; i < 16; i++){
-			al.add((Integer.decode("0x" +  test_state.substring(subindex, subindex+2))));
-			subindex+=2;
-		}
-		int count = 0;
-		for(int i = 0; i < state.length; i++){
-			for(int j = 0; j < state[i].length; j++){
-				state[j][i] = al.get(count++);
+		if(is.available() >= 16){
+			for(int i = 0; i < 16; i++){
+				int temp = is.read();
+//				al.add(is.read());
+			}	
+			
+		}else{
+			while(is.available() > 0)
+				al.add(is.read());
+			while(al.size() < 16){
+				al.add(0);
 			}
 		}
-		num_bytes += count;
 		
-//		if(is.available() >= 16){
-//			state = new int[4][4];
-//			ArrayList<Integer> al = new ArrayList<Integer>();
-//			for(int i = 0; i < 16; i++){
-//				al.add(is.read());
-//			}	
-//			
-//		}else{
-//			 
-//		}
-		
-		
-		
-		
-		
+		if(!encrypt){	
+			while(is.available() > 0)System.out.println(is.read());
+			while(is.available() >= 32){
+				int top = is.read();
+				int bottom = is.read();
+				al.add((top << 4) | bottom);
+			}
+		}
+
+		System.out.println(al.size());
+		Iterator<Integer> it = al.iterator();
+		for(int i = 0; i < state.length; i++){
+			for(int j = 0; j < state[i].length; j++){
+				state[j][i] = it.next();
+				num_bytes++;
+			}
+		}
 		
 	}
 	
