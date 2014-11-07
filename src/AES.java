@@ -1,8 +1,12 @@
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,8 +26,10 @@ public class AES
 	protected static int [][] e_table;
 	protected static int [][] l_table;
 	protected static int [][] mix_col_matrix; 
-	protected static int num_bytes;
+	protected static double num_bytes;
 	protected static boolean encrypt;
+	protected static int key_size;
+	protected static int num_rounds;
 	
 	public static void main(String[] args) throws IOException 
 	{
@@ -36,18 +42,20 @@ public class AES
 		encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-		
-		int key_size = 0;
+
 		boolean ecb = true;
 		File key = null;
+		File f = null;
 		Path path = null;
 		Scanner s = null;
 		
 		if(args.length == 7){
 			key_size = Integer.parseInt(args[2]);
 			key = new File(args[5]);
-			if(!encrypt)
-				s = new Scanner(new File(args[6]));
+			if(!encrypt){
+				s = new Scanner(new File(args[6])); 
+				f = new File(args[6].toString() + ".dec");
+			}
 			else
 				path = Paths.get(args[6]);
 				
@@ -55,14 +63,12 @@ public class AES
 				ecb = false;
 			
 		}else{
-			key = new File(args[1]);
-			path = Paths.get(args[2]);
-			key_size = 128;
-			ecb = true;
+			System.out.println("Incorrect execution line"); System.exit(-1);
 		}
 		
 		byte[] data = null;
 		ByteArrayInputStream is = null;
+		Writer w = null;
 		
 		
 		if(encrypt){
@@ -72,8 +78,7 @@ public class AES
 			//create a stream on the array
 			is = new ByteArrayInputStream(data);
 		}
-		
-		
+
 		make_key(key);
 		expand_key();
 		
@@ -86,16 +91,21 @@ public class AES
 			encrypt(pw, is, s);
 			sc.stop();
 			pw.close();
-			System.out.println("Encryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
+			System.out.println("Encryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
 		}
 		else
 		{
-			PrintWriter pw = new PrintWriter(new File (args[6].toString() + ".dec"));
+			
+			try {
+				w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
 			sc.start();
-			decrypt(pw, is, s);
+			decrypt(is, s, w);
 			sc.stop();
-			pw.close();
-			System.out.println("Decryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
+			System.out.println("Decryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
+			w.close();
 		}
 	}
 	
@@ -108,7 +118,7 @@ public class AES
 			ex_key = addRoundKey(ex_key);
 			
 			int round = 1;
-			while(round++ < 10){
+			while(round++ < num_rounds){
 				subBytes();
 				shiftRows();
 				mixColumns();
@@ -125,28 +135,35 @@ public class AES
 	}
 
 
-	static void decrypt(PrintWriter pw, ByteArrayInputStream is, Scanner sc){
+	static void decrypt(ByteArrayInputStream is, Scanner sc, Writer w){
 		while (sc.hasNextLine())
 		{
 			make_a_state(is, sc);
-			int ex_key = 43;
+			//int ex_key = 43;
+			int ex_key = ((num_rounds + 1) * 4) - 1;
 			ex_key = (invAddRoundKey(ex_key));
 			invShiftRows();
 			invSubBytes();
 			
-			int round = 9;
+			int round = num_rounds -1;
 			while(round-- > 0){
 				ex_key = invAddRoundKey(ex_key);
 				invMixColumns();
 				invShiftRows();
 				invSubBytes();
 			}
-
 			ex_key = invAddRoundKey(ex_key);
-			if(sc.hasNextLine())
-				pw.println(string_from_state());
-			else
-				pw.print(string_from_state());
+			
+			for(int i = 0; i < state.length; i++){
+				for(int j = 0; j < state[i].length; j++){
+					try {
+						w.write(state[j][i]);
+					} catch (IOException e) {
+						System.out.println("Something bad happened");
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 	}
 	
@@ -160,7 +177,6 @@ public class AES
 				else if(result.length() == 1)
 					result = "0" + result;
 				if(encrypt)		sb.append(result.toUpperCase());
-				else sb.append(result);
 			}
 		}		
 		return sb.toString();
@@ -345,23 +361,48 @@ public class AES
 	}
 	
 	private static void expand_key(){
-		expanded_key = new int[4][44];
-		for(int i = 0; i <key.length; i++){
-			for(int j = 0; j < key[i].length; j++){
-				expanded_key[j][i] = key[j][i];		
+		if(key_size == 128){
+			expanded_key = new int[4][44];
+			for(int i = 0; i <key.length; i++){
+				for(int j = 0; j < key[i].length; j++){
+					expanded_key[j][i] = key[j][i];		
 				}		
 			}
-		
-		for(int i = 4; i < 44; i++){
-			if((i%4) == 0){
-				int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
-				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-			}else{
-				int[] result = xor(ek(i-1), ek(i-4));
-				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+
+			for(int i = 4; i < 44; i++){
+				if((i%4) == 0){
+					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}else{
+					int[] result = xor(ek(i-1), ek(i-4));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}
 			}
+		}else if(key_size == 192){
+			expanded_key = new int[4][44];
+			for(int i = 0; i <key.length; i++){
+				for(int j = 0; j < key[i].length; j++){
+					expanded_key[j][i] = key[j][i];		
+				}		
+			}
+
+			for(int i = 4; i < 44; i++){
+				if((i%4) == 0){
+					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}else{
+					int[] result = xor(ek(i-1), ek(i-4));
+					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+				}
+			}
+		}else if(key_size == 256){
+			
+		}else{
+			System.out.println("bad things"); System.exit(-1);
 		}
 	}
 	
@@ -412,7 +453,10 @@ public class AES
 			if(!(k.length() == 32)){
 				System.out.println("Incorrect key size");	System.exit(-1);
 			}else{
-				key = new int [4][4];
+				if(key_size == 128){	key = new int [4][4]; num_rounds = 10;	}
+				else if(key_size == 192){	key = new int [4][6]; num_rounds = 12; }
+				else if(key_size == 256){	key = new int [4][8]; num_rounds = 14; }
+				else{ System.out.println("Incorrect key size"); System.exit(-1);}
 				int subindex = 0;
 				ArrayList<Integer> al = new ArrayList<Integer>(); 
 				for (int i = 0; i < 16; i++){
@@ -444,8 +488,7 @@ public class AES
 		}else{
 			if(is.available() >= 16){
 				for(int i = 0; i < 16; i++){
-					int temp = is.read();
-//					al.add(is.read());
+					al.add(is.read());
 				}	
 				
 			}else{
@@ -457,7 +500,6 @@ public class AES
 			}
 		}
 
-		System.out.println(al.size());
 		Iterator<Integer> it = al.iterator();
 		for(int i = 0; i < state.length; i++){
 			for(int j = 0; j < state[i].length; j++){
@@ -465,7 +507,6 @@ public class AES
 				num_bytes++;
 			}
 		}
-		
 	}
 	
 	static void print_array(int[][] a, boolean hex){

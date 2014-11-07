@@ -26,6 +26,17 @@ into the corrected form. we weren't sure what the instructions were talking abou
 the program there is no way to remove the added zeros or add in the truncated hex characters from the original file, so if the test case has 
 either of these situations then a diff will not work on the program. (that would be silly to expect though, so no loss).
 
+Test cases 1:
+Encrypt: 0.028537209906339654 MB/sec
+Decrypt: 0.009723910203141341 MB/sec
+Test Case 2:
+Encrypt: 0.013607080044248814 MB/sec
+Decrypt: 0.008596384647475188 MB/sec 
+Test case 3:
+Encrypt: 0.08931309994232485 MB/sec
+Decrypt: 0.08436755048452278 MB/sec
+ 
+
 [Test Cases]
 [test1]
 00000000000000000000000000000000
@@ -63,3 +74,52 @@ test3.enc
 
 [decrypted test3]
 test3.enc.dec
+
+
+[Extra Credit]
+(Note all of this needs to be ran with the 7 arguments)
+we've implemented the generic file encryption. the program now takes text files and successfully encrypts and decrypts them
+I'll include the 3 tests we ran and the bandwidths.
+
+[Test Cases]
+[test1]
+Hello World
+
+[key1]
+00000000000000000000000000000000
+
+[encrypted test1]
+C9D60C025F9185F8B68E31D05D813260
+Bandwidth: 0.04431134548313654 MB/sec
+
+[decrypted test1]
+Hello World
+Bandwidth: 0.013846626964861624 MB/sec
+
+[test2]
+war_plan
+
+[key2]
+00000000000000000000000000000000
+
+[encrypted test2]
+war_plan.enc
+Bandwidth: 0.2691986563025935 MB/sec
+
+[decrypted test2]
+war_plan.enc.dec
+Bandwidth: 0.16899197247901818 MB/sec
+
+[test3]
+war_and_peace (3.07716465)
+
+[key3]
+FFEEDDCCBBAA00998877665544332211
+
+[encrypted test3]
+war_and_peace.enc
+Bandwidth: 2.4041202032244278 MB/sec
+
+[decrypted test3]
+war_and_peace.enc.dec
+Bandwidth: 1.5187672075938727 MB/sec

@@ -21,7 +21,7 @@ public class AES
 	protected static int [][] e_table;
 	protected static int [][] l_table;
 	protected static int [][] mix_col_matrix; 
-	protected static int num_bytes;
+	protected static double num_bytes;
 	
 	public static void main(String[] args) throws IOException 
 	{
@@ -77,7 +77,7 @@ public class AES
 			encrypt(file, pw, is);
 			sc.stop();
 			pw.close();
-			System.out.println("Encryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
+			System.out.println("Encryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
 		}
 		else
 		{
@@ -86,7 +86,7 @@ public class AES
 			decrypt(file, pw, is);
 			sc.stop();
 			pw.close();
-			System.out.println("Decryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
+			System.out.println("Decryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
 		}
 		file.close();
 	}
