@@ -1,7 +1,11 @@
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -17,6 +21,7 @@ public class AES
 	protected static int [][] e_table;
 	protected static int [][] l_table;
 	protected static int [][] mix_col_matrix; 
+	protected static int num_bytes;
 	
 	public static void main(String[] args) throws IOException 
 	{
@@ -25,55 +30,85 @@ public class AES
 		fill_rcon();
 		fill_e();
 		fill_l();
+
 		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-		Scanner file = new Scanner(new File(args[2]));
-		make_key(args);
+		
+		int key_size = 0;
+		boolean ecb = true;
+		File key = null;
+		Scanner file = null;
+		Path path = null;
+		
+		if(args.length == 7){
+			key_size = Integer.parseInt(args[2]);
+			key = new File(args[5]);
+			path = Paths.get(args[6]);
+			file = new Scanner(new File(args[6]));
+			if(!args[4].toLowerCase().equals("ecb"))
+				ecb = false;
+			
+		}else{
+			key = new File(args[1]);
+			path = Paths.get(args[2]);
+			file = new Scanner(new File(args[2]));
+			key_size = 128;
+			ecb = true;
+		}
+		
+		//read the entire file into this byte array
+		byte [] data = Files.readAllBytes(path);
+
+		//create a stream on the array
+		ByteArrayInputStream is = new ByteArrayInputStream(data);
+		
+		
+		
+		make_key(key);
 		expand_key();
+		
+		Stopwatch sc = new Stopwatch();
 		
 		if (encrypt)
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
-			encrypt(file, pw);
+			sc.start();
+			encrypt(file, pw, is);
+			sc.stop();
 			pw.close();
+			System.out.println("Encryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
 		}
 		else
 		{
 			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
-			decrypt(file, pw);
+			sc.start();
+			decrypt(file, pw, is);
+			sc.stop();
 			pw.close();
+			System.out.println("Decryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
 		}
 		file.close();
 	}
 	
 	
-	static void encrypt(Scanner sc, PrintWriter pw){
+	static void encrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
 		while (sc.hasNextLine())
 		{
-			make_a_state(sc);
-//			print_array(state, true);
+			make_a_state(sc, is);
 			int ex_key = 0;
 			ex_key = addRoundKey(ex_key);
-//			print_array(state, true);
 			
 			int round = 1;
 			while(round++ < 10){
 				subBytes();
-//				print_array(state, true);
 				shiftRows();
-//				print_array(state, true);
 				mixColumns();
-//				print_array(state, true);
 				ex_key = addRoundKey(ex_key);
-//				print_array(state, true);
 			}
 			subBytes();
-//			print_array(state, true);
 			shiftRows();
-//			print_array(state, true);
 			ex_key = addRoundKey(ex_key);
-//			print_array(state, true);
 			if(sc.hasNextLine())
 				pw.println(string_from_state());
 			else
@@ -82,33 +117,24 @@ public class AES
 	}
 
 
-	static void decrypt(Scanner sc, PrintWriter pw){
+	static void decrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
 		while (sc.hasNextLine())
 		{
-			make_a_state(sc);
-//			print_array(state, true);
+			make_a_state(sc, is);
 			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
-//			print_array(state, true);
 			invShiftRows();
-//			print_array(state, true);
 			invSubBytes();
-//			print_array(state, true);
 			
 			int round = 9;
 			while(round-- > 0){
 				ex_key = invAddRoundKey(ex_key);
-//				print_array(state, true);
 				invMixColumns();
-//				print_array(state, true);
 				invShiftRows();
-//				print_array(state, true);
 				invSubBytes();
-//				print_array(state, true);
 			}
 
 			ex_key = invAddRoundKey(ex_key);
-//			print_array(state, true);
 			if(sc.hasNextLine())
 				pw.println(string_from_state());
 			else
@@ -368,8 +394,8 @@ public class AES
 		return result;
 	}
 	
-	private static void make_key(String[] args) throws FileNotFoundException {
-		Scanner the_key = new Scanner(new File(args[1]));
+	private static void make_key(File f) throws FileNotFoundException {
+		Scanner the_key = new Scanner(f);
 		if(!the_key.hasNextLine()){
 			System.out.println("No key present");	System.exit(-1);
 		}else{
@@ -395,7 +421,7 @@ public class AES
 	}
 	
 	
-	static void make_a_state(Scanner sc){
+	static void make_a_state(Scanner sc, ByteArrayInputStream is){
 		String test_state = sc.nextLine();
 		if (test_state.length() > 32) {
 			//Truncate sheet.
@@ -421,7 +447,25 @@ public class AES
 			for(int j = 0; j < state[i].length; j++){
 				state[j][i] = al.get(count++);
 			}
-		}		
+		}
+		num_bytes += count;
+		
+//		if(is.available() >= 16){
+//			state = new int[4][4];
+//			ArrayList<Integer> al = new ArrayList<Integer>();
+//			for(int i = 0; i < 16; i++){
+//				al.add(is.read());
+//			}	
+//			
+//		}else{
+//			 
+//		}
+		
+		
+		
+		
+		
+		
 	}
 	
 	static void print_array(int[][] a, boolean hex){
@@ -547,5 +591,53 @@ public class AES
 				{0x44, 0x11, 0x92, 0xD9, 0x23, 0x20, 0x2E, 0x89, 0xB4, 0x7C, 0xB8, 0x26, 0x77, 0x99, 0xE3, 0xA5,},
 				{0x67, 0x4A, 0xED, 0xDE, 0xC5, 0x31, 0xFE, 0x18, 0x0D, 0x63, 0x8C, 0x80, 0xC0, 0xF7, 0x70, 0x07,}  
 		};		
+	}
+}
+
+class Stopwatch 
+{	
+	private long startTime;
+	private long stopTime;
+
+	public static final double NANOS_PER_SEC = 1000000000.0;
+
+	/**
+	 start the stop watch.
+	 */
+	public void start()
+	{	
+		System.gc();
+		startTime = System.nanoTime();
+	}
+
+	/**
+	 stop the stop watch.
+	 */
+	public void stop()
+	{	
+		stopTime = System.nanoTime();	
+	}
+
+	/**
+	elapsed time in seconds.
+	@return the time recorded on the stopwatch in seconds
+	 */
+	public double time()
+	{	
+		return (stopTime - startTime) / NANOS_PER_SEC;	
+	}
+
+	public String toString()
+	{   
+		return "elapsed time: " + time() + " seconds.";
+	}
+
+	/**
+	elapsed time in nanoseconds.
+	@return the time recorded on the stopwatch in nanoseconds
+	 */
+	public long timeInNanoseconds()
+	{	
+		return (stopTime - startTime);	
 	}
 }
