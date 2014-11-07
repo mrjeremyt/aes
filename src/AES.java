@@ -151,7 +151,7 @@ public class AES
 					result = "00";
 				else if(result.length() == 1)
 					result = "0" + result;
-				sb.append(result);
+				sb.append(result.toUpperCase());
 			}
 		}		
 		return sb.toString();

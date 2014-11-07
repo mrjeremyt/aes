@@ -22,7 +22,9 @@ we finished both encrypt and decrypt. We did end up having to use Young's mixCol
 we have the program setup so that it will not only create the respective file (encrypted or decrypted) but the bandwidth is also being printed 
 to stdout. There was nothing in the instructions specifying if we should or shouldn't print anything so we left that part in as a nice touch. 
 Also the way the program is supposed to work is to pad or truncate the malformed or short lines, ours does that but it also decrypts the file 
-into the corrected form. we weren't sure what the instructions were talking about with this output, but this is the way ours works. 
+into the corrected form. we weren't sure what the instructions were talking about with this output, but this is the way ours works. The we did 
+the program there is no way to remove the added zeros or add in the truncated hex characters from the original file, so if the test case has 
+either of these situations then a diff will not work on the program. (that would be silly to expect though, so no loss).
 
 [Test Cases]
 [test1]
