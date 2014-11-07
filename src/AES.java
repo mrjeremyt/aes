@@ -41,11 +41,16 @@ public class AES
 		boolean ecb = true;
 		File key = null;
 		Path path = null;
+		Scanner s = null;
 		
 		if(args.length == 7){
 			key_size = Integer.parseInt(args[2]);
 			key = new File(args[5]);
-			path = Paths.get(args[6]);
+			if(!encrypt)
+				s = new Scanner(new File(args[6]));
+			else
+				path = Paths.get(args[6]);
+				
 			if(!args[4].toLowerCase().equals("ecb"))
 				ecb = false;
 			
@@ -56,12 +61,17 @@ public class AES
 			ecb = true;
 		}
 		
-		//read the entire file into this byte array
-		byte [] data = Files.readAllBytes(path);
-
-		//create a stream on the array
-		ByteArrayInputStream is = new ByteArrayInputStream(data);
+		byte[] data = null;
+		ByteArrayInputStream is = null;
 		
+		
+		if(encrypt){
+			//read the entire file into this byte array
+			data = Files.readAllBytes(path);
+
+			//create a stream on the array
+			is = new ByteArrayInputStream(data);
+		}
 		
 		
 		make_key(key);
@@ -71,18 +81,18 @@ public class AES
 		
 		if (encrypt)
 		{
-			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
+			PrintWriter pw = new PrintWriter(new File (args[6].toString() + ".enc"));
 			sc.start();
-			encrypt(pw, is);
+			encrypt(pw, is, s);
 			sc.stop();
 			pw.close();
 			System.out.println("Encryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
 		}
 		else
 		{
-			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
+			PrintWriter pw = new PrintWriter(new File (args[6].toString() + ".dec"));
 			sc.start();
-			decrypt(pw, is);
+			decrypt(pw, is, s);
 			sc.stop();
 			pw.close();
 			System.out.println("Decryption: " + (num_bytes/1000)/sc.time() + " MB/sec");
@@ -90,10 +100,10 @@ public class AES
 	}
 	
 	
-	static void encrypt(PrintWriter pw, ByteArrayInputStream is){
+	static void encrypt(PrintWriter pw, ByteArrayInputStream is, Scanner sc){
 		while (is.available() > 0)
 		{
-			make_a_state(is);
+			make_a_state(is, sc);
 			int ex_key = 0;
 			ex_key = addRoundKey(ex_key);
 			
@@ -115,10 +125,10 @@ public class AES
 	}
 
 
-	static void decrypt(PrintWriter pw, ByteArrayInputStream is){
-		while (is.available() > 0)
+	static void decrypt(PrintWriter pw, ByteArrayInputStream is, Scanner sc){
+		while (sc.hasNextLine())
 		{
-			make_a_state(is);
+			make_a_state(is, sc);
 			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
 			invShiftRows();
@@ -133,7 +143,7 @@ public class AES
 			}
 
 			ex_key = invAddRoundKey(ex_key);
-			if(is.available() > 0)
+			if(sc.hasNextLine())
 				pw.println(string_from_state());
 			else
 				pw.print(string_from_state());
@@ -149,7 +159,8 @@ public class AES
 					result = "00";
 				else if(result.length() == 1)
 					result = "0" + result;
-				sb.append(result.toUpperCase());
+				if(encrypt)		sb.append(result.toUpperCase());
+				else sb.append(result);
 			}
 		}		
 		return sb.toString();
@@ -419,30 +430,30 @@ public class AES
 	}
 	
 	
-	static void make_a_state(ByteArrayInputStream is){	
+	static void make_a_state(ByteArrayInputStream is, Scanner sc){	
 		state = new int[4][4];
 		ArrayList<Integer> al = new ArrayList<Integer>();
-		
-		if(is.available() >= 16){
-			for(int i = 0; i < 16; i++){
-				int temp = is.read();
-//				al.add(is.read());
-			}	
-			
-		}else{
-			while(is.available() > 0)
-				al.add(is.read());
-			while(al.size() < 16){
-				al.add(0);
-			}
-		}
-		
+				
 		if(!encrypt){	
-			while(is.available() > 0)System.out.println(is.read());
-			while(is.available() >= 32){
-				int top = is.read();
-				int bottom = is.read();
-				al.add((top << 4) | bottom);
+			String test_state = sc.nextLine();
+			int subindex = 0;
+			for (int i = 0; i < 16; i++){
+				al.add((Integer.decode("0x" +  test_state.substring(subindex, subindex+2))));
+				subindex+=2;
+			}
+		}else{
+			if(is.available() >= 16){
+				for(int i = 0; i < 16; i++){
+					int temp = is.read();
+//					al.add(is.read());
+				}	
+				
+			}else{
+				while(is.available() > 0)
+					al.add(is.read());
+				while(al.size() < 16){
+					al.add(0);
+				}
 			}
 		}
 
