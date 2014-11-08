@@ -33,12 +33,14 @@ public class AES
 	
 	public static void main(String[] args) throws IOException 
 	{
+		//filling in all the lookup tables. 
 		fill_xbox();
 		fill_inv_xbox();
 		fill_rcon();
 		fill_e();
 		fill_l();
-
+		
+		//determining whether it's in encrypt or decrypt mode
 		encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
@@ -95,11 +97,7 @@ public class AES
 		
 		if (encrypt)
 		{
-			PrintWriter pw = null;
-			if(args.length == 7)
-				pw = new PrintWriter(new File (args[6].toString() + ".enc"));
-			else
-				pw = new PrintWriter(new File (args[2].toString() + ".enc"));
+			PrintWriter pw = new PrintWriter(new File (args[(args.length - 1)].toString() + ".enc"));
 			sc.start();
 			encrypt(pw, is, s);
 			sc.stop();
@@ -108,7 +106,6 @@ public class AES
 		}
 		else
 		{
-			
 			try {
 				w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
 			} catch (UnsupportedEncodingException e) {
@@ -217,66 +214,47 @@ public class AES
 	
 	static void shiftRows(){
 		//shift of 1
-		int[] row_1 = state[1];
-		int[] row_2 = state[2];
-		int[] row_3 = state[3];
+		int[] row_1 = state[1];	int[] row_2 = state[2];	int[] row_3 = state[3];
 		
 		//setup the temp vars
-		int temp_1;
-		int temp_2;
-		int temp_3;
-		
+		int temp_1;	int temp_2;	int temp_3;
 		
 		//first shift
 		temp_1 = row_1[0];
 		row_1[0] = row_1[1]; row_1[1] = row_1[2]; row_1[2] = row_1[3]; row_1[3] = temp_1;
 		
 		//second shift
-		temp_1 = row_2[0];
-		temp_2 = row_2[1];
+		temp_1 = row_2[0];	temp_2 = row_2[1];
 		row_2[0] = row_2[2]; row_2[1] = row_2[3]; row_2[2] = temp_1; row_2[3] = temp_2;
 		
 		//third shift
-		temp_1 = row_3[0];
-		temp_2 = row_3[1];
-		temp_3 = row_3[2];
+		temp_1 = row_3[0];	temp_2 = row_3[1];	temp_3 = row_3[2];
 		row_3[0] = row_3[3]; row_3[1] = temp_1; row_3[2] = temp_2; row_3[3] = temp_3;
 		
 		//put back into state
-		state[1] = row_1;
-		state[2] = row_2;
-		state[3] = row_3;
+		state[1] = row_1;	state[2] = row_2;	state[3] = row_3;
 	}
 	
 	static void invShiftRows(){
 		//shift of 1
-		int[] row_1 = state[1];
-		int[] row_2 = state[2];
-		int[] row_3 = state[3];
+		int[] row_1 = state[1];	int[] row_2 = state[2];	int[] row_3 = state[3];
 		
 		//setup the temp vars
-		int temp_1;
-		int temp_2;
-		int temp_3;
+		int temp_1;	int temp_2;	int temp_3;
 			
 		//first shift
 		temp_1 = row_1[3];
 		row_1[3] = row_1[2]; row_1[2] = row_1[1]; row_1[1] = row_1[0]; row_1[0] = temp_1; 
 		
 		//second shift
-		temp_1 = row_2[3];
-		temp_2 = row_2[2];
+		temp_1 = row_2[3];	temp_2 = row_2[2];
 		row_2[3] = row_2[1]; row_2[2] = row_2[0]; row_2[0] = temp_2; row_2[1] = temp_1;
 		//third shift
-		temp_1 = row_3[1];
-		temp_2 = row_3[2];
-		temp_3 = row_3[3];
+		temp_1 = row_3[1];	temp_2 = row_3[2];	temp_3 = row_3[3];
 		row_3[3] = row_3[0]; row_3[0] = temp_1; row_3[1] = temp_2; row_3[2] = temp_3;
 		
 		//put back into state
-		state[1] = row_1;
-		state[2] = row_2;
-		state[3] = row_3;
+		state[1] = row_1;	state[2] = row_2;	state[3] = row_3;
 	}
 	
 	private static void mixColumns(){		
@@ -290,7 +268,6 @@ public class AES
 			invMixColumn2(i);
 	}
 	
-////////////////////////the mixColumns Tranformation ////////////////////////
 	private static int mul (int a, int b) {
 		int inda = (a < 0) ? (a + 256) : a;
 		int indb = (b < 0) ? (b + 256) : b;
@@ -305,18 +282,12 @@ public class AES
 			return 0;
 	} 
 	
-	public static void mixColumn2 (int c) {
-		//This is another alternate version of mixColumn, using the 
-		//logtables to do the computation.
-		
+	public static void mixColumn2 (int c) {		
 		int a[] = new int[4];
 		
-		//note that a is just a copy of st[.][c]
 		for (int i = 0; i < 4; i++) 
 			a[i] = state[i][c];
 		
-		//This is exactly the same as mixColumns1, if 
-		//the mul columns somehow match the b columns there.
 		state[0][c] = (mul(2,a[0]) ^ a[2] ^ a[3] ^ mul(3,a[1]));
 		state[1][c] = (mul(2,a[1]) ^ a[3] ^ a[0] ^ mul(3,a[2]));
 		state[2][c] = (mul(2,a[2]) ^ a[0] ^ a[1] ^ mul(3,a[3]));
@@ -326,7 +297,6 @@ public class AES
 	public static void invMixColumn2 (int c) {
 		int a[] = new int[4];
 		
-		//note that a is just a copy of st[.][c]
 		for (int i = 0; i < 4; i++) 
 			a[i] = state[i][c];
 		
@@ -374,69 +344,25 @@ public class AES
 	}
 	
 	private static void expand_key(){
-		if(key_size == 128){
-			expanded_key = new int[4][44];
-			for(int i = 0; i <key.length; i++){
-				for(int j = 0; j < key[i].length; j++){
-					expanded_key[j][i] = key[j][i];		
-				}		
-			}
+		expanded_key = new int[4][(num_rounds + 1) *4];
+		for(int i = 0; i <key[0].length; i++){
+			for(int j = 0; j < key.length; j++){
+				expanded_key[j][i] = key[j][i];		
+			}		
+		}
 
-			for(int i = 4; i < 44; i++){
-				if((i%4) == 0){
-					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}else{
-					int[] result = xor(ek(i-1), ek(i-4));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}
+		for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
+			if((i%(key_size/32)) == 0){
+				int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-(key_size/32)));
+				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
+			}else{
+				int[] result = xor(ek(i-1), ek(i-(key_size/32)));
+				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
+				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}
-		}else if(key_size == 192){
-			expanded_key = new int[4][(num_rounds + 1) *4];
-			for(int i = 0; i <key[0].length; i++){
-				for(int j = 0; j < key.length; j++){
-					expanded_key[j][i] = key[j][i];		
-				}		
-			}
-
-			for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
-				if((i%6) == 0){
-					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-6));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}else{
-					int[] result = xor(ek(i-1), ek(i-6));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}
-			}
-		}else if(key_size == 256){
-			expanded_key = new int[4][(num_rounds + 1) *4];
-			for(int i = 0; i <key[0].length; i++){
-				for(int j = 0; j < key.length; j++){
-					expanded_key[j][i] = key[j][i];		
-				}		
-			}
-
-			for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
-				if((i%8) == 0){
-					int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-8));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}else{
-					int[] result = xor(ek(i-1), ek(i-8));
-					expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
-					expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
-				}
-			}
-		}else{
-			System.out.println("bad things"); System.exit(-1);
 		}
 	}
-	
-	
 	
 	private static int[] xor(int[] a, int[] b){
 		int[] result = new int[a.length];
@@ -456,10 +382,8 @@ public class AES
 	}
 	
 	private static int[] rotword (int[] offset){
-		int temp_0 = offset [0];
-		int temp_1 = offset [1];
-		int temp_2 = offset [2];
-		int temp_3 = offset [3];
+		int temp_0 = offset [0];	int temp_1 = offset [1];
+		int temp_2 = offset [2];	int temp_3 = offset [3];
 		
 		return new int[] {temp_1, temp_2, temp_3, temp_0}; 
 	}
