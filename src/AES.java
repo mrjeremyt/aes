@@ -1,17 +1,12 @@
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Scanner;
 
 
@@ -27,69 +22,49 @@ public class AES
 	protected static int [][] l_table;
 	protected static int [][] mix_col_matrix; 
 	protected static double num_bytes;
-	protected static boolean encrypt;
-	protected static int key_size;
-	protected static int num_rounds;
 	
 	public static void main(String[] args) throws IOException 
 	{
-		//filling in all the lookup tables. 
 		fill_xbox();
 		fill_inv_xbox();
 		fill_rcon();
 		fill_e();
 		fill_l();
-		
-		//determining whether it's in encrypt or decrypt mode
-		encrypt = true;
+
+		Boolean encrypt = true;
 		if(!args[0].toLowerCase().equals("e"))
 			encrypt = false;
-
+		
+		int key_size = 0;
 		boolean ecb = true;
 		File key = null;
-		File f = null;
+		Scanner file = null;
 		Path path = null;
-		Scanner s = null;
 		
 		if(args.length == 7){
 			key_size = Integer.parseInt(args[2]);
 			key = new File(args[5]);
-			if(!encrypt){
-				s = new Scanner(new File(args[6])); 
-				f = new File(args[6].toString() + ".dec");
-			}
-			else
-				path = Paths.get(args[6]);
-				
+			path = Paths.get(args[6]);
+			file = new Scanner(new File(args[6]));
 			if(!args[4].toLowerCase().equals("ecb"))
 				ecb = false;
 			
-		}else if(args.length == 3){
-			key_size = 128;
-			key = new File(args[1]);
-			if(!encrypt){
-				s = new Scanner(new File(args[2])); 
-				f = new File(args[2].toString() + ".dec");
-			}
-			else
-				path = Paths.get(args[2]);
 		}else{
-			System.out.println("Incorrect execution line"); System.exit(-1);
+			key = new File(args[1]);
+			path = Paths.get(args[2]);
+			file = new Scanner(new File(args[2]));
+			key_size = 128;
+			ecb = true;
 		}
 		
-		byte[] data = null;
-		ByteArrayInputStream is = null;
-		Writer w = null;
+		//read the entire file into this byte array
+		byte [] data = Files.readAllBytes(path);
+
+		//create a stream on the array
+		ByteArrayInputStream is = new ByteArrayInputStream(data);
 		
 		
-		if(encrypt){
-			//read the entire file into this byte array
-			data = Files.readAllBytes(path);
-
-			//create a stream on the array
-			is = new ByteArrayInputStream(data);
-		}
-
+		
 		make_key(key);
 		expand_key();
 		
@@ -97,38 +72,35 @@ public class AES
 		
 		if (encrypt)
 		{
-			PrintWriter pw = new PrintWriter(new File (args[(args.length - 1)].toString() + ".enc"));
+			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".enc"));
 			sc.start();
-			encrypt(pw, is, s);
+			encrypt(file, pw, is);
 			sc.stop();
 			pw.close();
 			System.out.println("Encryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
 		}
 		else
 		{
-			try {
-				w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
+			PrintWriter pw = new PrintWriter(new File (args[2].toString() + ".dec"));
 			sc.start();
-			decrypt(is, s, w);
+			decrypt(file, pw, is);
 			sc.stop();
+			pw.close();
 			System.out.println("Decryption: " + ((num_bytes/1024)/1024)/sc.time() + " MB/sec");
-			w.close();
 		}
+		file.close();
 	}
 	
 	
-	static void encrypt(PrintWriter pw, ByteArrayInputStream is, Scanner sc){
-		while (is.available() > 0)
+	static void encrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
+		while (sc.hasNextLine())
 		{
-			make_a_state(is, sc);
+			make_a_state(sc, is);
 			int ex_key = 0;
 			ex_key = addRoundKey(ex_key);
 			
 			int round = 1;
-			while(round++ < num_rounds){
+			while(round++ < 10){
 				subBytes();
 				shiftRows();
 				mixColumns();
@@ -137,7 +109,7 @@ public class AES
 			subBytes();
 			shiftRows();
 			ex_key = addRoundKey(ex_key);
-			if(is.available() > 0)
+			if(sc.hasNextLine())
 				pw.println(string_from_state());
 			else
 				pw.print(string_from_state());
@@ -145,35 +117,28 @@ public class AES
 	}
 
 
-	static void decrypt(ByteArrayInputStream is, Scanner sc, Writer w){
+	static void decrypt(Scanner sc, PrintWriter pw, ByteArrayInputStream is){
 		while (sc.hasNextLine())
 		{
-			make_a_state(is, sc);
-			//int ex_key = 43;
-			int ex_key = ((num_rounds + 1) * 4) - 1;
+			make_a_state(sc, is);
+			int ex_key = 43;
 			ex_key = (invAddRoundKey(ex_key));
 			invShiftRows();
 			invSubBytes();
 			
-			int round = num_rounds -1;
+			int round = 9;
 			while(round-- > 0){
 				ex_key = invAddRoundKey(ex_key);
 				invMixColumns();
 				invShiftRows();
 				invSubBytes();
 			}
+
 			ex_key = invAddRoundKey(ex_key);
-			
-			for(int i = 0; i < state.length; i++){
-				for(int j = 0; j < state[i].length; j++){
-					try {
-						w.write(state[j][i]);
-					} catch (IOException e) {
-						System.out.println("Something bad happened");
-						e.printStackTrace();
-					}
-				}
-			}
+			if(sc.hasNextLine())
+				pw.println(string_from_state());
+			else
+				pw.print(string_from_state());
 		}
 	}
 	
@@ -186,7 +151,7 @@ public class AES
 					result = "00";
 				else if(result.length() == 1)
 					result = "0" + result;
-				if(encrypt)		sb.append(result.toUpperCase());
+				sb.append(result.toUpperCase());
 			}
 		}		
 		return sb.toString();
@@ -214,47 +179,66 @@ public class AES
 	
 	static void shiftRows(){
 		//shift of 1
-		int[] row_1 = state[1];	int[] row_2 = state[2];	int[] row_3 = state[3];
+		int[] row_1 = state[1];
+		int[] row_2 = state[2];
+		int[] row_3 = state[3];
 		
 		//setup the temp vars
-		int temp_1;	int temp_2;	int temp_3;
+		int temp_1;
+		int temp_2;
+		int temp_3;
+		
 		
 		//first shift
 		temp_1 = row_1[0];
 		row_1[0] = row_1[1]; row_1[1] = row_1[2]; row_1[2] = row_1[3]; row_1[3] = temp_1;
 		
 		//second shift
-		temp_1 = row_2[0];	temp_2 = row_2[1];
+		temp_1 = row_2[0];
+		temp_2 = row_2[1];
 		row_2[0] = row_2[2]; row_2[1] = row_2[3]; row_2[2] = temp_1; row_2[3] = temp_2;
 		
 		//third shift
-		temp_1 = row_3[0];	temp_2 = row_3[1];	temp_3 = row_3[2];
+		temp_1 = row_3[0];
+		temp_2 = row_3[1];
+		temp_3 = row_3[2];
 		row_3[0] = row_3[3]; row_3[1] = temp_1; row_3[2] = temp_2; row_3[3] = temp_3;
 		
 		//put back into state
-		state[1] = row_1;	state[2] = row_2;	state[3] = row_3;
+		state[1] = row_1;
+		state[2] = row_2;
+		state[3] = row_3;
 	}
 	
 	static void invShiftRows(){
 		//shift of 1
-		int[] row_1 = state[1];	int[] row_2 = state[2];	int[] row_3 = state[3];
+		int[] row_1 = state[1];
+		int[] row_2 = state[2];
+		int[] row_3 = state[3];
 		
 		//setup the temp vars
-		int temp_1;	int temp_2;	int temp_3;
+		int temp_1;
+		int temp_2;
+		int temp_3;
 			
 		//first shift
 		temp_1 = row_1[3];
 		row_1[3] = row_1[2]; row_1[2] = row_1[1]; row_1[1] = row_1[0]; row_1[0] = temp_1; 
 		
 		//second shift
-		temp_1 = row_2[3];	temp_2 = row_2[2];
+		temp_1 = row_2[3];
+		temp_2 = row_2[2];
 		row_2[3] = row_2[1]; row_2[2] = row_2[0]; row_2[0] = temp_2; row_2[1] = temp_1;
 		//third shift
-		temp_1 = row_3[1];	temp_2 = row_3[2];	temp_3 = row_3[3];
+		temp_1 = row_3[1];
+		temp_2 = row_3[2];
+		temp_3 = row_3[3];
 		row_3[3] = row_3[0]; row_3[0] = temp_1; row_3[1] = temp_2; row_3[2] = temp_3;
 		
 		//put back into state
-		state[1] = row_1;	state[2] = row_2;	state[3] = row_3;
+		state[1] = row_1;
+		state[2] = row_2;
+		state[3] = row_3;
 	}
 	
 	private static void mixColumns(){		
@@ -268,6 +252,7 @@ public class AES
 			invMixColumn2(i);
 	}
 	
+////////////////////////the mixColumns Tranformation ////////////////////////
 	private static int mul (int a, int b) {
 		int inda = (a < 0) ? (a + 256) : a;
 		int indb = (b < 0) ? (b + 256) : b;
@@ -282,12 +267,18 @@ public class AES
 			return 0;
 	} 
 	
-	public static void mixColumn2 (int c) {		
+	public static void mixColumn2 (int c) {
+		//This is another alternate version of mixColumn, using the 
+		//logtables to do the computation.
+		
 		int a[] = new int[4];
 		
+		//note that a is just a copy of st[.][c]
 		for (int i = 0; i < 4; i++) 
 			a[i] = state[i][c];
 		
+		//This is exactly the same as mixColumns1, if 
+		//the mul columns somehow match the b columns there.
 		state[0][c] = (mul(2,a[0]) ^ a[2] ^ a[3] ^ mul(3,a[1]));
 		state[1][c] = (mul(2,a[1]) ^ a[3] ^ a[0] ^ mul(3,a[2]));
 		state[2][c] = (mul(2,a[2]) ^ a[0] ^ a[1] ^ mul(3,a[3]));
@@ -297,6 +288,7 @@ public class AES
 	public static void invMixColumn2 (int c) {
 		int a[] = new int[4];
 		
+		//note that a is just a copy of st[.][c]
 		for (int i = 0; i < 4; i++) 
 			a[i] = state[i][c];
 		
@@ -344,25 +336,27 @@ public class AES
 	}
 	
 	private static void expand_key(){
-		expanded_key = new int[4][(num_rounds + 1) *4];
-		for(int i = 0; i <key[0].length; i++){
-			for(int j = 0; j < key.length; j++){
+		expanded_key = new int[4][44];
+		for(int i = 0; i <key.length; i++){
+			for(int j = 0; j < key[i].length; j++){
 				expanded_key[j][i] = key[j][i];		
-			}		
-		}
-
-		for(int i = (key_size/32); i < ((num_rounds + 1) *4); i++){
-			if((i%(key_size/32)) == 0){
-				int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-(key_size/32)));
+				}		
+			}
+		
+		for(int i = 4; i < 44; i++){
+			if((i%4) == 0){
+				int[] result = xor(xor(subword(rotword(ek(i-1))), archon(i)), ek(i-4));
 				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}else{
-				int[] result = xor(ek(i-1), ek(i-(key_size/32)));
+				int[] result = xor(ek(i-1), ek(i-4));
 				expanded_key[0][i] = result[0]; expanded_key[1][i] = result[1];
 				expanded_key[2][i] = result[2]; expanded_key[3][i] = result[3];
 			}
 		}
 	}
+	
+	
 	
 	private static int[] xor(int[] a, int[] b){
 		int[] result = new int[a.length];
@@ -382,8 +376,10 @@ public class AES
 	}
 	
 	private static int[] rotword (int[] offset){
-		int temp_0 = offset [0];	int temp_1 = offset [1];
-		int temp_2 = offset [2];	int temp_3 = offset [3];
+		int temp_0 = offset [0];
+		int temp_1 = offset [1];
+		int temp_2 = offset [2];
+		int temp_3 = offset [3];
 		
 		return new int[] {temp_1, temp_2, temp_3, temp_0}; 
 	}
@@ -404,59 +400,72 @@ public class AES
 			System.out.println("No key present");	System.exit(-1);
 		}else{
 			String k = the_key.nextLine();
-			if(key_size == 128){	key = new int [4][4]; num_rounds = 10;	}
-			else if(key_size == 192){	key = new int [4][6]; num_rounds = 12; }
-			else if(key_size == 256){	key = new int [4][8]; num_rounds = 14; }
-			else{ System.out.println("Incorrect key size"); System.exit(-1);}
-			int subindex = 0;
-			ArrayList<Integer> al = new ArrayList<Integer>();
-			for (int i = 0; i < (key_size / 8); i++){
-				al.add((Integer.decode("0x" +  k.substring(subindex, subindex+2))));
-				subindex+=2;
-			}
-			int count = 0;
-			for(int i = 0; i < key[0].length; i++){
-				for(int j = 0; j < key.length; j++){
-					key[j][i] = al.get(count++);	}
+			if(!(k.length() == 32)){
+				System.out.println("Incorrect key size");	System.exit(-1);
+			}else{
+				key = new int [4][4];
+				int subindex = 0;
+				ArrayList<Integer> al = new ArrayList<Integer>(); 
+				for (int i = 0; i < 16; i++){
+					al.add((Integer.decode("0x" +  k.substring(subindex, subindex+2))));
+					subindex+=2;
+				}
+				int count = 0;
+				for(int i = 0; i < key.length; i++){
+					for(int j = 0; j < key[i].length; j++){
+						key[j][i] = al.get(count++);	}
+				}
 			}
 		}
 		the_key.close();
 	}
 	
 	
-	static void make_a_state(ByteArrayInputStream is, Scanner sc){	
-		state = new int[4][4];
-		ArrayList<Integer> al = new ArrayList<Integer>();
-				
-		if(!encrypt){	
-			String test_state = sc.nextLine();
-			int subindex = 0;
-			for (int i = 0; i < 16; i++){
-				al.add((Integer.decode("0x" +  test_state.substring(subindex, subindex+2))));
-				subindex+=2;
-			}
-		}else{
-			if(is.available() >= 16){
-				for(int i = 0; i < 16; i++){
-					al.add(is.read());
-				}	
-				
-			}else{
-				while(is.available() > 0)
-					al.add(is.read());
-				while(al.size() < 16){
-					al.add(0);
-				}
-			}
+	static void make_a_state(Scanner sc, ByteArrayInputStream is){
+		String test_state = sc.nextLine();
+		if (test_state.length() > 32) {
+			//Truncate sheet.
+			test_state = test_state.substring(0, 32);
 		}
-
-		Iterator<Integer> it = al.iterator();
+		else if (test_state.length() < 32)	{
+			//Paaaaaad 0s at back.
+			StringBuilder sb = new StringBuilder(test_state);
+			while(sb.length() < 32)
+				sb.append('0');
+			test_state = sb.toString();		
+		}
+		
+		state = new int [4][4];
+		int subindex = 0;
+		ArrayList<Integer> al = new ArrayList<Integer>(); 
+		for (int i = 0; i < 16; i++){
+			al.add((Integer.decode("0x" +  test_state.substring(subindex, subindex+2))));
+			subindex+=2;
+		}
+		int count = 0;
 		for(int i = 0; i < state.length; i++){
 			for(int j = 0; j < state[i].length; j++){
-				state[j][i] = it.next();
-				num_bytes++;
+				state[j][i] = al.get(count++);
 			}
 		}
+		num_bytes += count;
+		
+//		if(is.available() >= 16){
+//			state = new int[4][4];
+//			ArrayList<Integer> al = new ArrayList<Integer>();
+//			for(int i = 0; i < 16; i++){
+//				al.add(is.read());
+//			}	
+//			
+//		}else{
+//			 
+//		}
+		
+		
+		
+		
+		
+		
 	}
 	
 	static void print_array(int[][] a, boolean hex){
